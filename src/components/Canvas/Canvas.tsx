@@ -7,8 +7,6 @@ import Konva from 'konva';
 
 interface PhotoProps {
   url: string;
-  x: number;
-  y: number;
   width: number;
 }
 
@@ -17,9 +15,11 @@ const Canvas = () => {
   const [scale, setScale] = useState(1);
 
   const photos: PhotoProps[] = [
-    { url: '/photos/photo1.jpg', x: 100, y: 100, width: 200 },
-    { url: '/photos/photo2.jpg', x: 400, y: 200, width: 200 },
-    { url: '/photos/photo3.jpg', x: 700, y: 400, width: 200 },
+    { url: '/photos/photo1.jpg', width: 200 },
+    { url: '/photos/photo2.jpg', width: 200 },
+    { url: '/photos/photo3.jpg', width: 200 },
+    { url: '/photos/photo4.jpg', width: 200 },
+    { url: '/photos/photo5.jpg', width: 200 },
   ];
 
   useEffect(() => {
@@ -49,7 +49,7 @@ const Canvas = () => {
       stage.position(newPos);
       stage.batchDraw();
 
-      setScale(newScale); // 🛎️ Actualizar el estado del zoom
+      setScale(newScale); // 🛎️ Actualizamos zoom
     };
 
     stage.container().addEventListener('wheel', handleWheel);
@@ -58,6 +58,18 @@ const Canvas = () => {
       stage.container().removeEventListener('wheel', handleWheel);
     };
   }, []);
+
+  // Distribuir en círculo
+  const centerX = typeof window !== 'undefined' ? window.innerWidth / 2 : 400;
+  const centerY = typeof window !== 'undefined' ? window.innerHeight / 2 : 300;
+  const radius = 300; // Distancia desde el centro
+
+  const photosWithPositions = photos.map((photo, index) => {
+    const angle = (index / photos.length) * Math.PI * 2; // Distribuye de forma equitativa
+    const x = centerX + radius * Math.cos(angle);
+    const y = centerY + radius * Math.sin(angle);
+    return { ...photo, x, y };
+  });
 
   return (
     <Stage
@@ -68,14 +80,14 @@ const Canvas = () => {
       style={{ background: '#1a1a1a' }}
     >
       <Layer>
-        {photos.map((photo, index) => (
+        {photosWithPositions.map((photo, index) => (
           <Photo
             key={index}
             url={photo.url}
             x={photo.x}
             y={photo.y}
             width={photo.width}
-            zoomScale={scale} // 👈 Le pasamos el zoom a cada Photo
+            zoomScale={scale} // 👈 seguimos pasando el zoom
           />
         ))}
       </Layer>
