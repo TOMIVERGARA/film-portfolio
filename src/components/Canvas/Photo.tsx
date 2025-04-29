@@ -36,8 +36,8 @@ const Photo = ({ url, x, y, width, zoomScale }: PhotoProps) => {
       if (!frame) return;
 
       const time = frame.time / 1000;
-      const floatAmplitude = 5 / zoomScale; // 🛎️ Ajusta según el zoom
-      const floatSpeed = 0.5 / zoomScale;
+      const floatAmplitude = Math.min(2.5 / zoomScale, 3.5); // 🛎️ Ajusta según el zoom
+      const floatSpeed = Math.min(0.5 / zoomScale, 0.8);
 
       const offsetX = Math.sin(time * floatSpeed + baseX) * floatAmplitude;
       const offsetY = Math.cos(time * floatSpeed + baseY) * floatAmplitude;
