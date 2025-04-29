@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { Stage, Layer } from 'react-konva';
+import { Stage, Layer, Circle } from 'react-konva';
 import Photo from './Photo';
 import { forceSimulation, forceManyBody, forceCenter, forceCollide, SimulationNodeDatum, forceLink } from 'd3-force';
 
@@ -67,21 +67,21 @@ const Canvas = () => {
     {
       id: "rollo1",
       photos: [
-        { url: "/photos/rollo1/photo1.jpg", width: 150, aspectRatio: 1.5 },
-        { url: "/photos/rollo1/photo2.jpg", width: 150, aspectRatio: 1.5 },
+        { url: "/photos/rollo1/photo1.jpg", width: 200, aspectRatio: 1.5 },
+        { url: "/photos/rollo1/photo2.jpg", width: 200, aspectRatio: 1.5 },
       ],
     },
     {
       id: "rollo2",
       photos: [
-        { url: "/photos/rollo2/photo1.jpg", width: 150, aspectRatio: 1.5 },
-        { url: "/photos/rollo2/photo2.jpg", width: 150, aspectRatio: 1.5 },
-        { url: "/photos/rollo2/photo3.jpg", width: 150, aspectRatio: 1.5 },
-        { url: "/photos/rollo2/photo4.jpg", width: 150, aspectRatio: 1.5 },
-        { url: "/photos/rollo2/photo5.jpg", width: 150, aspectRatio: 1.5 },
-        { url: "/photos/rollo2/photo6.jpg", width: 150, aspectRatio: 1.5 },
-        { url: "/photos/rollo2/photo7.jpg", width: 150, aspectRatio: 1.5 },
-        { url: "/photos/rollo2/photo8.jpg", width: 150, aspectRatio: 1.5 },
+        { url: "/photos/rollo2/photo1.jpg", width: 200, aspectRatio: 1.5 },
+        { url: "/photos/rollo2/photo2.jpg", width: 200, aspectRatio: 1.5 },
+        { url: "/photos/rollo2/photo3.jpg", width: 200, aspectRatio: 1.5 },
+        { url: "/photos/rollo2/photo4.jpg", width: 200, aspectRatio: 1.5 },
+        { url: "/photos/rollo2/photo5.jpg", width: 200, aspectRatio: 1.5 },
+        { url: "/photos/rollo2/photo6.jpg", width: 200, aspectRatio: 1.5 },
+        { url: "/photos/rollo2/photo7.jpg", width: 200, aspectRatio: 1.5 },
+        { url: "/photos/rollo2/photo8.jpg", width: 200, aspectRatio: 1.5 },
       ],
     },
   ];
@@ -140,11 +140,10 @@ const Canvas = () => {
   
       const simulation = forceSimulation<GraphNode>(allNodes)
   .force('center', forceCenter(width / 2, height / 2))
-   .force('rolloAttraction', forceRolloCenter(allNodes, 0.0001)) // fuerza suave de atracción
-   .force('charge', forceManyBody().strength(-150)) // más repulsión
+   .force('collide', forceCollide<GraphNode>(d => d.width / 2 + 10).radius(170)) // colisión
   .force('link', forceLink<GraphNode, any>(allNodes)
     .id((d) => d.id)
-    .distance(500)
+    .distance(1)
     .strength(0.005)
     .links(generateLinks(allNodes))
   )
@@ -207,6 +206,14 @@ const Canvas = () => {
     >
       <Layer>
       {nodes.map((node, index) => (
+        <div>
+        {/* <Circle 
+        x={node.x}
+        y={node.y}
+        radius={170}
+  fill={'red'}
+        /> */}
+
   <Photo
     key={index}
     url={node.imageUrl}
@@ -215,6 +222,7 @@ const Canvas = () => {
     width={node.width}
     zoomScale={scale}
   />
+        </div>
 ))}
       </Layer>
     </Stage>

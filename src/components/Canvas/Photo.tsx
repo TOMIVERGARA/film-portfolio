@@ -28,8 +28,8 @@ const Photo = ({ url, x, y, width, zoomScale }: PhotoProps) => {
     if (!shapeRef.current) return;
 
     const node = shapeRef.current;
-    const baseX = x;
-    const baseY = y;
+    const baseX = x - width / 2;
+    const baseY = y - (width / aspectRatio)/2;
     let anim: Konva.Animation;
 
     anim = new Konva.Animation((frame) => {
@@ -54,15 +54,18 @@ const Photo = ({ url, x, y, width, zoomScale }: PhotoProps) => {
   }, [x, y, zoomScale]);
 
   return image ? (
+    <div>
     <KonvaImage
       ref={shapeRef}
       image={image}
-      x={x}
-      y={y}
+      x={x - width / 2}
+      y={y - (width / aspectRatio)/2}
       width={width}
       height={width / aspectRatio}
 
     />
+    </div>
+ 
   ) : null;
 };
 
