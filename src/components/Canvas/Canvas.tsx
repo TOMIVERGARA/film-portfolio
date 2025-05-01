@@ -3,161 +3,164 @@
 import { useEffect, useState, useRef } from 'react';
 import { Stage, Layer, Circle } from 'react-konva';
 import Photo from './Photo';
-import { forceSimulation, forceManyBody, forceCenter, forceCollide, SimulationNodeDatum, forceLink } from 'd3-force';
+import Label from './Label';
+import { forceSimulation, forceCenter, forceCollide, SimulationNodeDatum, forceLink } from 'd3-force';
 
-interface Rollo {
+interface Roll {
     id: string;
+    metadata: {
+      name?: string;
+      date?: string;
+      filmstock?: string;
+      };
     photos: {
       url: string;
       width: number;
-      aspectRatio?: number; // opcional
+      photo_metadata: { public_id?: string, notes?: string };
     }[];
   }
   
   interface GraphNode extends SimulationNodeDatum {
     id: string;
-    imageUrl: string;
+    imageUrl?: string; // Hacerlo opcional para nodos de etiqueta
     width: number;
     height: number;
     rolloId: string;
+    note?: string;
     rolloCenter: { x: number; y: number };
     x?: number;
     y?: number;
+    isLabel?: boolean; // Nuevo campo para identificar nodos de etiqueta
+    metadata?: {       // Nuevo campo para almacenar metadata
+      name?: string;
+      date?: string;
+      filmstock?: string;
+    };
   }
 
-  
-
-  function forceRolloCenter(nodes: GraphNode[], strength = 0.001) {
-    function force(alpha: number) {
-      for (const node of nodes) {
-        if (!node.rolloCenter) continue;
-        node.vx = (node.vx ?? 0) + (node.rolloCenter.x - (node.x ?? 0)) * strength * alpha;
-        node.vy = (node.vy ?? 0) + (node.rolloCenter.y - (node.y ?? 0)) * strength * alpha;
-      }
-    }
-    return force;
-  }
 
   function generateLinks(nodes: GraphNode[]) {
-    const links = [];
-  
-    const groups = nodes.reduce((acc, node) => {
-      acc[node.rolloId] = acc[node.rolloId] || [];
-      acc[node.rolloId].push(node);
-      return acc;
-    }, {} as Record<string, GraphNode[]>);
-  
-    for (const group of Object.values(groups)) {
-      for (let i = 0; i < group.length; i++) {
-        for (let j = i + 1; j < group.length; j++) {
-          links.push({ source: group[i].id, target: group[j].id });
+  const links = [];
+  const groups = nodes.reduce((acc, node) => {
+    acc[node.rolloId] = acc[node.rolloId] || [];
+    acc[node.rolloId].push(node);
+    return acc;
+  }, {} as Record<string, GraphNode[]>);
+
+  for (const group of Object.values(groups)) {
+    const label = group.find(n => n.isLabel);
+    const photos = group.filter(n => !n.isLabel);
+
+    // Conectar cada foto con la etiqueta central
+    photos.forEach(photo => {
+      links.push({
+        source: label!.id,
+        target: photo.id
+      });
+    });
+
+    // Opcional: conexiones entre fotos para mantener estructura
+    for (let i = 0; i < photos.length; i++) {
+      for (let j = i + 1; j < photos.length; j++) {
+        if (Math.random() > 0.7) { // Conectar solo algunas fotos entre sí
+          links.push({
+            source: photos[i].id,
+            target: photos[j].id,
+            distance: 200 // Mayor distancia entre fotos
+          });
         }
       }
     }
-  
-    return links;
   }
+
+  return links;
+}
 
 const Canvas = () => {
   const stageRef = useRef<any>(null);
+  const [rolls, setRolls] = useState<Roll[]>([]);
   const [scale, setScale] = useState(1);
   const [nodes, setNodes] = useState<any[]>([]);
 
-  const rolls: Rollo[] = [
-    {
-      id: "rollo1",
-      photos: [
-        { url: "/photos/rollo1/photo1.jpg", width: 200, aspectRatio: 1.5 },
-        { url: "/photos/rollo1/photo2.jpg", width: 200, aspectRatio: 1.5 },
-      ],
-    },
-    {
-      id: "rollo2",
-      photos: [
-        { url: "/photos/rollo2/photo1.jpg", width: 200, aspectRatio: 1.5 },
-        { url: "/photos/rollo2/photo2.jpg", width: 200, aspectRatio: 1.5 },
-        { url: "/photos/rollo2/photo3.jpg", width: 200, aspectRatio: 1.5 },
-        { url: "/photos/rollo2/photo4.jpg", width: 200, aspectRatio: 1.5 },
-        { url: "/photos/rollo2/photo5.jpg", width: 200, aspectRatio: 1.5 },
-        { url: "/photos/rollo2/photo6.jpg", width: 200, aspectRatio: 1.5 },
-        { url: "/photos/rollo2/photo7.jpg", width: 200, aspectRatio: 1.5 },
-        { url: "/photos/rollo2/photo8.jpg", width: 200, aspectRatio: 1.5 },
-      ],
-    },
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch('/pages/api/photos'); // Nota: cambié la ruta
+        const data = await response.json(); // Esperamos a que se resuelva la Promise
+        setRolls(data);
+      } catch (error) {
+        console.error('Error fetching photos:', error);
+      }
+    };
+  
+    fetchData();
+  }, []);
 
-  function preloadImage(url: string): Promise<{ width: number; height: number }> {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.src = url;
-      img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
-      img.onerror = reject;
-    });
-  }
+
 
   useEffect(() => {
-    const width = typeof window !== 'undefined' ? window.innerWidth : 800;
-    const height = typeof window !== 'undefined' ? window.innerHeight : 600;
-  
-    const totalRollos = rolls.length;
-    const distanceBetweenRolls = 800;
-    
-    const rollCenters = rolls.map((_, i) => ({
-      x: width / 2 + distanceBetweenRolls * Math.cos((i / totalRollos) * 2 * Math.PI),
-      y: height / 2 + distanceBetweenRolls * Math.sin((i / totalRollos) * 2 * Math.PI),
+    if (!rolls.length) return;
+    const W = window.innerWidth, H = window.innerHeight;
+    const R = 800, N = rolls.length;
+    const centers = rolls.map((_, i) => ({
+      x: W/2 + R * Math.cos(2*Math.PI*i/N),
+      y: H/2 + R * Math.sin(2*Math.PI*i/N),
     }));
-  
-    async function setupNodes() {
-      const allNodes: GraphNode[] = [];
-  
-      for (let rollIndex = 0; rollIndex < rolls.length; rollIndex++) {
-        const roll = rolls[rollIndex];
-        const center = rollCenters[rollIndex];
-  
-        for (const photo of roll.photos) {
-          try {
-            const { width: naturalWidth, height: naturalHeight } = await preloadImage(photo.url);
-            
-            const fixedWidth = photo.width ?? 200;
-            const aspectRatio = photo.aspectRatio ?? naturalWidth / naturalHeight;
-            const calculatedHeight = fixedWidth / aspectRatio;
-  
-            allNodes.push({
-              id: `${roll.id}-${photo.url}`,
-              imageUrl: photo.url,
-              width: fixedWidth,
-              height: calculatedHeight,
-              rolloId: roll.id,
-              rolloCenter: center,
-              x: center.x + Math.random() * 100 - 50,
-              y: center.y + Math.random() * 100 - 50,
-            });
-          } catch (error) {
-            console.error("Error loading image:", photo.url, error);
-          }
-        }
-      }
+
+    const allNodes: GraphNode[] = [];
+    rolls.forEach((roll, i) => {
+      const c = centers[i];
+
+      allNodes.push({
+        id: `${roll.id}-label`,
+        width: 200, // Ancho fijo para las etiquetas
+        height: 60, // Alto fijo para las etiquetas
+        rolloId: roll.id,
+        rolloCenter: c,
+        x: c.x + Math.random()*50 - 25,
+        y: c.y + Math.random()*50 - 25,
+        isLabel: true,
+        metadata: roll.metadata
+      });
+
+      roll.photos.forEach((p, j) => {
+        allNodes.push({
+          id: `${roll.id}-${j}`,
+          imageUrl: p.url,
+          width: p.width,
+          height: p.width * (3/4),   // asume ratio 4:3, o précarga si prefieres
+          rolloId: roll.id,
+          note: p.photo_metadata?.notes,
+          rolloCenter: c,
+          x: c.x + Math.random()*50 - 25,
+          y: c.y + Math.random()*50 - 25,
+        });
+      });
+    });
   
       const simulation = forceSimulation<GraphNode>(allNodes)
-  .force('center', forceCenter(width / 2, height / 2))
-   .force('collide', forceCollide<GraphNode>(d => d.width / 2 + 10).radius(170)) // colisión
+  .force('center', forceCenter(W / 2, H / 2))
+  .force('collide', forceCollide<GraphNode>(d => {
+    if (d.isLabel) {
+      // Radio más pequeño para etiquetas (ajusta estos valores)
+      return 80; // Radio fijo pequeño para etiquetas
+    }
+    // Radio proporcional al tamaño para fotos
+    return Math.min(d.width / 2 + 100); // Límite máximo de 100 para fotos
+  }).strength(0.7)) // Fuerza de colisión (puedes ajustar)
   .force('link', forceLink<GraphNode, any>(allNodes)
     .id((d) => d.id)
     .distance(1)
-    .strength(0.005)
+    .strength(0.03)
     .links(generateLinks(allNodes))
   )
   .stop();
+
   
-      for (let i = 0; i < 400; i++) {
-        simulation.tick();
-      }
-  
+      for (let i = 0; i < 600; i++) simulation.tick();
       setNodes(allNodes);
-    }
-  
-    setupNodes();
-  }, []);
+
+  }, [rolls]);
 
   useEffect(() => {
     const stage = stageRef.current;
@@ -202,29 +205,36 @@ const Canvas = () => {
       width={typeof window !== 'undefined' ? window.innerWidth : 800}
       height={typeof window !== 'undefined' ? window.innerHeight : 600}
       draggable
-      style={{ background: '#1a1a1a' }}
+      style={{ background: '#171717' }}
     >
-      <Layer>
-      {nodes.map((node, index) => (
-        <div>
-        {/* <Circle 
-        x={node.x}
-        y={node.y}
-        radius={170}
-  fill={'red'}
-        /> */}
-
-  <Photo
-    key={index}
-    url={node.imageUrl}
-    x={node.x}
-    y={node.y}
-    width={node.width}
-    zoomScale={scale}
-  />
-        </div>
-))}
-      </Layer>
+     <Layer>
+      {nodes.map((node, index) => {
+        if (node.isLabel) {
+          return (
+            <Label
+              key={index}
+              x={node.x}
+              y={node.y}
+              width={node.width}
+              zoomScale={scale}
+              metadata={node.metadata}
+            />
+          );
+        } else {
+          return (
+            <Photo
+              key={index}
+              url={node.imageUrl}
+              x={node.x}
+              y={node.y}
+              width={node.width}
+              zoomScale={scale}
+              note={node.note}
+            />
+          );
+        }
+      })}
+    </Layer>
     </Stage>
   );
 };

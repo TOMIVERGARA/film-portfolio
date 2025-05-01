@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Image as KonvaImage } from 'react-konva';
+import { Image as KonvaImage, Text, Group } from 'react-konva';
 import useImage from '../Utils/useImage';
 import Konva from 'konva';
 
@@ -10,13 +10,15 @@ interface PhotoProps {
   x: number;
   y: number;
   width: number;
-  zoomScale: number; // 👈 Nuevo prop recibido
+  zoomScale: number;
+  note?: string; // 👈 Nuevo prop para la nota
 }
 
-const Photo = ({ url, x, y, width, zoomScale }: PhotoProps) => {
+const Photo = ({ url, x, y, width, zoomScale, note }: PhotoProps) => {
   const image = useImage(url);
-  const shapeRef = useRef<any>(null);
+  const groupRef = useRef<any>(null);
   const [aspectRatio, setAspectRatio] = useState(1);
+  const [textWidth, setTextWidth] = useState(width);
 
   useEffect(() => {
     if (image) {
@@ -25,9 +27,9 @@ const Photo = ({ url, x, y, width, zoomScale }: PhotoProps) => {
   }, [image]);
 
   useEffect(() => {
-    if (!shapeRef.current) return;
+    if (!groupRef.current) return;
 
-    const node = shapeRef.current;
+    const node = groupRef.current;
     const baseX = x - width / 2;
     const baseY = y - (width / aspectRatio)/2;
     let anim: Konva.Animation;
@@ -36,7 +38,7 @@ const Photo = ({ url, x, y, width, zoomScale }: PhotoProps) => {
       if (!frame) return;
 
       const time = frame.time / 1000;
-      const floatAmplitude = Math.min(2.5 / zoomScale, 3.5); // 🛎️ Ajusta según el zoom
+      const floatAmplitude = Math.min(2.5 / zoomScale, 3.5);
       const floatSpeed = Math.min(0.5 / zoomScale, 0.8);
 
       const offsetX = Math.sin(time * floatSpeed + baseX) * floatAmplitude;
@@ -51,22 +53,33 @@ const Photo = ({ url, x, y, width, zoomScale }: PhotoProps) => {
     return () => {
       anim.stop();
     };
-  }, [x, y, zoomScale]);
+  }, [x, y, zoomScale, width, aspectRatio]);
 
-  return image ? (
-    <div>
-    <KonvaImage
-      ref={shapeRef}
-      image={image}
-      x={x - width / 2}
-      y={y - (width / aspectRatio)/2}
-      width={width}
-      height={width / aspectRatio}
+  if (!image) return null;
 
-    />
-    </div>
- 
-  ) : null;
+  return (
+    <Group ref={groupRef}>
+      <KonvaImage
+        image={image}
+        width={width}
+        height={width / aspectRatio}
+      />
+      {note && (
+        <Text
+          text={"*"+note}
+          width={width}
+          align="left"
+          fill="#ababab"
+          fontSize={11}
+          fontStyle="italic"
+          fontFamily="Helvetica"
+          y={width / aspectRatio + 5} // Posición debajo de la imagen
+          wrap="word"
+          ellipsis={true}
+        />
+      )}
+    </Group>
+  );
 };
 
 export default Photo;
