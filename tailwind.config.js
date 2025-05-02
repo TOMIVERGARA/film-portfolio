@@ -7,7 +7,10 @@ module.exports = {
     "./app/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    fontFamily: {
+      sans: ["Quicksand", "sans-serif"], // Fuente principal (por defecto)
+      accent: ["Playfair", "serif"], // Fuente de acento (personalizada)
+    },
   },
   plugins: [],
 };

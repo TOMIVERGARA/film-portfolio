@@ -17,6 +17,7 @@
     "cloudinary": "^2.6.0",
     "clsx": "^2.1.1",
     "d3-force": "^3.0.0",
+    "framer-motion": "^12.9.4",
     "konva": "^9.3.20",
     "lucide-react": "^0.503.0",
     "next": "15.3.1",
@@ -28,6 +29,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4.1.5",
+    "@tailwindcss/typography": "^0.5.16",
     "@types/d3-force": "^3.0.10",
     "@types/node": "^20",
     "@types/react": "^19",
