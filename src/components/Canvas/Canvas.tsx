@@ -213,7 +213,7 @@ const Canvas = () => {
       let progress = Math.min(elapsed / duration, 1);
 
       // Curvas de easing
-      const easedProgress = easeInOutCubic(progress);
+      const easedProgress = easeInOutSine(progress);
 
       // Interpolación de escala: "zoom out" hasta la mitad y luego "zoom in"
       const midPoint = 0.5;
@@ -225,14 +225,14 @@ const Canvas = () => {
         currentScale =
           startScale -
           (startScale - startScale * zoomOutFactor) *
-            easeInOutCubic(scaleProgress);
+            easeInOutSine(scaleProgress);
       } else {
         // Segunda mitad: escalar de zoomOutFactor a targetScale
         const scaleProgress = (progress - midPoint) / midPoint;
         currentScale =
           startScale * zoomOutFactor +
           (targetScale - startScale * zoomOutFactor) *
-            easeInOutCubic(scaleProgress);
+            easeInOutSine(scaleProgress);
       }
 
       // Movimiento: desde posición actual a objetivo (suave durante toda la animación)
@@ -263,9 +263,8 @@ const Canvas = () => {
     };
   }, [currentRollIndex, rollCenters]);
 
-  // Función de easing mejorada
-  const easeInOutCubic = (t: number) => {
-    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  const easeInOutSine = (t: number) => {
+    return -(Math.cos(Math.PI * t) - 1) / 2;
   };
 
   useEffect(() => {
