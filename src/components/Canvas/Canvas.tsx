@@ -11,6 +11,8 @@ import {
   forceCollide,
   SimulationNodeDatum,
   forceLink,
+  forceX,
+  forceY,
 } from "d3-force";
 import Konva from "konva";
 
@@ -39,6 +41,7 @@ interface GraphNode extends SimulationNodeDatum {
   x?: number;
   y?: number;
   isLabel?: boolean; // Nuevo campo para identificar nodos de etiqueta
+  isCentral?: boolean; // Nuevo campo para identificar nodo central
   metadata?: {
     // Nuevo campo para almacenar metadata
     name?: string;
@@ -56,25 +59,25 @@ function generateLinks(nodes: GraphNode[]) {
   }, {} as Record<string, GraphNode[]>);
 
   for (const group of Object.values(groups)) {
-    const label = group.find((n) => n.isLabel);
-    const photos = group.filter((n) => !n.isLabel);
+    const centro = group.find((n) => n.isCentral); // Buscar el nodo central
+    const otrasFotos = group.filter((n) => !n.isCentral);
 
-    // Conectar cada foto con la etiqueta central
-    photos.forEach((photo) => {
+    // Conectar cada foto con el centro
+    otrasFotos.forEach((foto) => {
       links.push({
-        source: label!.id,
-        target: photo.id,
+        source: centro!.id,
+        target: foto.id,
+        distance: 150, // Distancia base desde el centro
       });
     });
 
-    // Opcional: conexiones entre fotos para mantener estructura
-    for (let i = 0; i < photos.length; i++) {
-      for (let j = i + 1; j < photos.length; j++) {
-        if (Math.random() > 0.7) {
-          // Conectar solo algunas fotos entre sí
+    // (Opcional) Conexiones entre fotos secundarias
+    for (let i = 0; i < otrasFotos.length; i++) {
+      for (let j = i + 1; j < otrasFotos.length; j++) {
+        if (Math.random() > 0.8) {
           links.push({
-            source: photos[i].id,
-            target: photos[j].id,
+            source: otrasFotos[i].id,
+            target: otrasFotos[j].id,
             distance: 200, // Mayor distancia entre fotos
           });
         }
@@ -132,24 +135,47 @@ const Canvas = () => {
     rolls.forEach((roll, i) => {
       const c = centers[i];
 
+      // 1. Seleccionar foto central aleatoria y FIJARLA en el centro
+      const randomIndex = Math.floor(Math.random() * roll.photos.length);
+      const fotoCentral = roll.photos[randomIndex];
+
+      // Nodo central (fijo)
+      allNodes.push({
+        id: `${roll.id}-centro`,
+        imageUrl: fotoCentral.url,
+        width: fotoCentral.width,
+        height: fotoCentral.width * (3 / 4),
+        rolloId: roll.id,
+        note: fotoCentral.photo_metadata?.notes,
+        rolloCenter: c,
+        x: c.x,
+        y: c.y,
+        fx: c.x, // Fuerza fija para mantener posición
+        fy: c.y,
+        isCentral: true,
+      });
+
+      // 2. Crear etiqueta (label) como nodo normal
       allNodes.push({
         id: `${roll.id}-label`,
-        width: 200, // Ancho fijo para las etiquetas
-        height: 60, // Alto fijo para las etiquetas
+        width: 200,
+        height: 60,
         rolloId: roll.id,
         rolloCenter: c,
-        x: c.x + Math.random() * 50 - 25,
+        x: c.x + Math.random() * 50 - 25, // Posición inicial aleatoria
         y: c.y + Math.random() * 50 - 25,
         isLabel: true,
         metadata: roll.metadata,
       });
 
+      // 3. Resto de fotos (incluyendo la original si es necesario)
       roll.photos.forEach((p, j) => {
+        if (j === randomIndex) return; // Saltar la foto central ya creada
         allNodes.push({
           id: `${roll.id}-${j}`,
           imageUrl: p.url,
           width: p.width,
-          height: p.width * (3 / 4), // asume ratio 4:3, o précarga si prefieres
+          height: p.width * (3 / 4),
           rolloId: roll.id,
           note: p.photo_metadata?.notes,
           rolloCenter: c,
@@ -160,7 +186,8 @@ const Canvas = () => {
     });
 
     const simulation = forceSimulation<GraphNode>(allNodes)
-      .force("center", forceCenter(W / 2, H / 2))
+      .force("x", forceX<GraphNode>((d) => d.rolloCenter.x).strength(0.05)) // Fuerza de atracción horizontal
+      .force("y", forceY<GraphNode>((d) => d.rolloCenter.y).strength(0.05)) // Fuerza de atracción vertical
       .force(
         "collide",
         forceCollide<GraphNode>((d) => {
@@ -176,8 +203,8 @@ const Canvas = () => {
         "link",
         forceLink<GraphNode, any>(allNodes)
           .id((d) => d.id)
-          .distance(1)
-          .strength(0.03)
+          .distance(100) // Aumentar distancia base
+          .strength(0.1) // Aumentar fuerza de conexión
           .links(generateLinks(allNodes))
       )
       .stop();
