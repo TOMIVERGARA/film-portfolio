@@ -1,7 +1,7 @@
 "use client";
 
 import { useCanvas } from "../CanvasContext";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Stage, Layer, Circle } from "react-konva";
 import Photo from "./Photo";
 import Label from "./Label";
@@ -88,7 +88,8 @@ function generateLinks(nodes: GraphNode[]) {
 const Canvas = () => {
   const stageRef = useRef<any>(null);
 
-  const { currentRollIndex, setRollsCount, centerOnRoll } = useCanvas();
+  const { currentRollIndex, setRollsCount, shouldCenter, setShouldCenter } =
+    useCanvas();
   const [rollCenters, setRollCenters] = useState<{ x: number; y: number }[]>(
     []
   );
@@ -184,6 +185,51 @@ const Canvas = () => {
     for (let i = 0; i < 600; i++) simulation.tick();
     setNodes(allNodes);
   }, [rolls]);
+
+  useEffect(() => {
+    if (shouldCenter && rollCenters.length > 0) {
+      const center = rollCenters[currentRollIndex];
+      if (!center || !stageRef.current) return;
+
+      const stage = stageRef.current;
+      const startTime = Date.now();
+      const duration = 1000;
+      const zoomOutFactor = 0.4;
+      const startScale = stage.scaleX();
+
+      const startX = stage.x();
+      const startY = stage.y();
+      const targetX = window.innerWidth / 2 - center.x * startScale;
+      const targetY = window.innerHeight / 2 - center.y * startScale;
+
+      const anim = new Konva.Animation((frame) => {
+        if (!frame) return;
+
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const easedProgress = easeInOutSine(progress);
+
+        const currentScale =
+          startScale * (zoomOutFactor + (1 - zoomOutFactor) * easedProgress);
+        const currentX = startX + (targetX - startX) * easedProgress;
+        const currentY = startY + (targetY - startY) * easedProgress;
+
+        stage.scale({ x: currentScale, y: currentScale });
+        stage.position({ x: currentX, y: currentY });
+
+        if (progress === 1) {
+          anim.stop();
+          setScale(startScale);
+          setShouldCenter(false); // Resetea el flag
+        }
+      });
+
+      anim.start();
+      return () => {
+        anim.stop();
+      };
+    }
+  }, [shouldCenter, currentRollIndex, rollCenters]);
 
   useEffect(() => {
     if (!stageRef.current || rollCenters.length === 0) return;
