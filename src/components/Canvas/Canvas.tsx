@@ -1,5 +1,6 @@
 "use client";
 
+import { useCanvas } from "../CanvasContext";
 import { useEffect, useState, useRef } from "react";
 import { Stage, Layer, Circle } from "react-konva";
 import Photo from "./Photo";
@@ -11,6 +12,7 @@ import {
   SimulationNodeDatum,
   forceLink,
 } from "d3-force";
+import Konva from "konva";
 
 interface Roll {
   id: string;
@@ -85,6 +87,12 @@ function generateLinks(nodes: GraphNode[]) {
 
 const Canvas = () => {
   const stageRef = useRef<any>(null);
+
+  const { currentRollIndex, setRollsCount, centerOnRoll } = useCanvas();
+  const [rollCenters, setRollCenters] = useState<{ x: number; y: number }[]>(
+    []
+  );
+
   const [rolls, setRolls] = useState<Roll[]>([]);
   const [scale, setScale] = useState(1);
   const [nodes, setNodes] = useState<any[]>([]);
@@ -105,14 +113,19 @@ const Canvas = () => {
 
   useEffect(() => {
     if (!rolls.length) return;
+
     const W = window.innerWidth,
       H = window.innerHeight;
     const R = 800,
       N = rolls.length;
+
     const centers = rolls.map((_, i) => ({
       x: W / 2 + R * Math.cos((2 * Math.PI * i) / N),
       y: H / 2 + R * Math.sin((2 * Math.PI * i) / N),
     }));
+
+    setRollCenters(centers);
+    setRollsCount(rolls.length);
 
     const allNodes: GraphNode[] = [];
     rolls.forEach((roll, i) => {
@@ -173,6 +186,89 @@ const Canvas = () => {
   }, [rolls]);
 
   useEffect(() => {
+    if (!stageRef.current || rollCenters.length === 0) return;
+
+    const center = rollCenters[currentRollIndex];
+    if (!center) return;
+
+    const stage = stageRef.current;
+    const startTime = Date.now();
+    const duration = 3000; // 1 segundo de animación
+    const zoomOutFactor = 0.4; // Zoom out al 70%
+    const startScale = stage.scaleX(); // Guardamos el zoom inicial
+    const targetScale = startScale; // Queremos volver al mismo zoom
+
+    const startX = stage.x();
+    const startY = stage.y();
+    const targetX = window.innerWidth / 2 - center.x * targetScale;
+    const targetY = window.innerHeight / 2 - center.y * targetScale;
+
+    // Punto intermedio en la animación (50%)
+    const midProgress = 0.5;
+
+    const anim = new Konva.Animation((frame) => {
+      if (!frame) return;
+
+      const elapsed = Date.now() - startTime;
+      let progress = Math.min(elapsed / duration, 1);
+
+      // Curvas de easing
+      const easedProgress = easeInOutCubic(progress);
+
+      // Interpolación de escala: "zoom out" hasta la mitad y luego "zoom in"
+      const midPoint = 0.5;
+      let currentScale: number;
+
+      if (progress <= midPoint) {
+        // Primera mitad: escalar de startScale a startScale * zoomOutFactor
+        const scaleProgress = progress / midPoint;
+        currentScale =
+          startScale -
+          (startScale - startScale * zoomOutFactor) *
+            easeInOutCubic(scaleProgress);
+      } else {
+        // Segunda mitad: escalar de zoomOutFactor a targetScale
+        const scaleProgress = (progress - midPoint) / midPoint;
+        currentScale =
+          startScale * zoomOutFactor +
+          (targetScale - startScale * zoomOutFactor) *
+            easeInOutCubic(scaleProgress);
+      }
+
+      // Movimiento: desde posición actual a objetivo (suave durante toda la animación)
+      const currentX = startX + (targetX - startX) * easedProgress;
+      const currentY = startY + (targetY - startY) * easedProgress;
+
+      // Aplicar transformaciones
+      stage.scale({ x: currentScale, y: currentScale });
+      stage.position({ x: currentX, y: currentY });
+
+      if (progress === 1) {
+        anim.stop();
+        stage.position({ x: targetX, y: targetY });
+        stage.scale({ x: targetScale, y: targetScale });
+        setScale(targetScale);
+      }
+
+      stage.batchDraw(); // Redibujar para suavidad adicional
+    });
+
+    anim.start();
+
+    return () => {
+      anim.stop();
+      // Si la animación se interrumpe, volvemos al zoom original
+      stage.scale({ x: startScale, y: startScale });
+      setScale(startScale);
+    };
+  }, [currentRollIndex, rollCenters]);
+
+  // Función de easing mejorada
+  const easeInOutCubic = (t: number) => {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  };
+
+  useEffect(() => {
     const stage = stageRef.current;
 
     const handleWheel = (e: WheelEvent) => {
@@ -218,6 +314,16 @@ const Canvas = () => {
       style={{ background: "#171717", position: "fixed", zIndex: 10 }}
     >
       <Layer>
+        {rollCenters.map((center, index) => (
+          <Circle
+            key={`debug-${index}`}
+            x={center.x}
+            y={center.y}
+            radius={5 / scale} // Radio que se ajusta con el zoom
+            fill={index === currentRollIndex ? "#3b82f6" : "#9ca3af"} // Azul para el actual, gris para otros
+            opacity={0.8}
+          />
+        ))}
         {nodes.map((node, index) => {
           if (node.isLabel) {
             return (

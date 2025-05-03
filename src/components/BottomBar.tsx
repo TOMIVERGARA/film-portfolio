@@ -1,20 +1,17 @@
 "use client";
 
+import { useCanvas } from "./CanvasContext";
 import { Button } from "@/components/ui/button";
 import {
-  Home,
   Search,
-  PlusSquare,
-  User,
   Target,
-  MoveLeft,
   ArrowLeft,
   ArrowRight,
   FileUser,
   Images,
 } from "lucide-react";
+
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 
 import {
   Tooltip,
@@ -27,8 +24,26 @@ import { AboutMe } from "./AboutMe";
 import { useState } from "react";
 
 export function BottomBar() {
-  const pathname = usePathname();
+  const { currentRollIndex, rollsCount, centerOnRoll, setCurrentRollIndex } =
+    useCanvas();
+
   const [showAbout, setShowAbout] = useState(false);
+
+  const handleMoveForward = () => {
+    if (rollsCount > 0) {
+      setCurrentRollIndex((prev) => (prev + 1) % rollsCount);
+    }
+  };
+
+  const handleMoveBackward = () => {
+    if (rollsCount > 0) {
+      setCurrentRollIndex((prev) => (prev - 1 + rollsCount) % rollsCount);
+    }
+  };
+
+  const handleCenter = () => {
+    centerOnRoll(currentRollIndex);
+  };
 
   return (
     <>
@@ -60,7 +75,8 @@ export function BottomBar() {
                 <Button
                   size="icon"
                   asChild
-                  className="hover:bg-neutral-600/20  rounded-none"
+                  className="hover:bg-neutral-600/20 rounded-none"
+                  onClick={handleMoveBackward}
                 >
                   <Link href="/">
                     <ArrowLeft />
@@ -77,6 +93,7 @@ export function BottomBar() {
                   size="icon"
                   asChild
                   className="hover:bg-neutral-600/20 hover:animate-pulse rounded-none"
+                  onClick={handleCenter}
                 >
                   <Link href="/">
                     <Target />
@@ -92,14 +109,15 @@ export function BottomBar() {
                 <Button
                   size="icon"
                   asChild
-                  className="hover:bg-neutral-600/20  rounded-none"
+                  className="hover:bg-neutral-600/20 rounded-none"
+                  onClick={handleMoveForward}
                 >
                   <Link href="/">
                     <ArrowRight />
                   </Link>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent className="mb-2">move fordward</TooltipContent>
+              <TooltipContent className="mb-2">move forward</TooltipContent>
             </Tooltip>
           </TooltipProvider>
           <Separator className="h-7" orientation="vertical" />
