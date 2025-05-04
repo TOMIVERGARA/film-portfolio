@@ -11,8 +11,14 @@ export const LoadingScreen = ({ progress }: { progress: number }) => {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="text-center">
-        <div className="spinner border-4 border-t-transparent rounded-full w-12 h-12 animate-spin mb-4"></div>
+      <div className="text-left prose prose-invert prose-neutral">
+        <h1 className="font-serif">we are preparing the experience...</h1>
+        <p>
+          this may take a bit, but trust me, <i>its ALL worth it.</i>
+          <br />
+          preloading all the content allows for a smoother experience, so you
+          can fully immerse yourself without interruptions.
+        </p>
         <motion.div
           className="h-1 bg-white/20 w-64 mx-auto rounded-full overflow-hidden"
           initial={{ width: 0 }}
@@ -24,7 +30,7 @@ export const LoadingScreen = ({ progress }: { progress: number }) => {
           />
         </motion.div>
         <p className="mt-4 text-sm text-white/70">
-          Cargando colección completa... {Math.round(progress)}%
+          progress... {Math.round(progress)}%
         </p>
       </div>
     </motion.div>
