@@ -73,6 +73,8 @@ export async function GET(req: NextApiRequest, res: NextApiResponse) {
                         media_metadata: true,
                         image_metadata: true,
                     });
+                    console.log('Recuperadas fotos:', resources.resources.length);
+                    console.log('Recuperadas fotos:', resources.resources);
 
                     photos = resources.resources
                         .filter((r: { public_id: string; }) => !r.public_id.startsWith('manifest'))  // excluir el manifest
