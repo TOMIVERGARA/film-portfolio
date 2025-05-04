@@ -234,7 +234,7 @@ const Canvas = () => {
 
         const elapsed = Date.now() - startTime;
         const progress = Math.min(elapsed / duration, 1);
-        const easedProgress = easeInOutSine(progress);
+        const easedProgress = easeOutSine(progress);
 
         const currentScale =
           startScale * (zoomOutFactor + (1 - zoomOutFactor) * easedProgress);
@@ -266,78 +266,58 @@ const Canvas = () => {
 
     const stage = stageRef.current;
     const startTime = Date.now();
-    const duration = 3000; // 1 segundo de animación
-    const zoomOutFactor = 0.4; // Zoom out al 70%
-    const startScale = stage.scaleX(); // Guardamos el zoom inicial
-    const targetScale = startScale; // Queremos volver al mismo zoom
+    const duration = 3000; // Duración óptima para el efecto
+    const zoomFactor = 0.4; // Nivel máximo de zoom out
 
+    // Valores iniciales
+    const startScale = stage.scaleX();
     const startX = stage.x();
     const startY = stage.y();
+
+    // Objetivo final
+    const targetScale = startScale;
     const targetX = window.innerWidth / 2 - center.x * targetScale;
     const targetY = window.innerHeight / 2 - center.y * targetScale;
-
-    // Punto intermedio en la animación (50%)
-    const midProgress = 0.5;
 
     const anim = new Konva.Animation((frame) => {
       if (!frame) return;
 
       const elapsed = Date.now() - startTime;
-      let progress = Math.min(elapsed / duration, 1);
+      const rawProgress = Math.min(elapsed / duration, 1);
 
-      // Curvas de easing
-      const easedProgress = easeInOutSine(progress);
+      // Curva personalizada para sincronizar zoom y movimiento
+      const progress = easeOutSine(rawProgress);
 
-      // Interpolación de escala: "zoom out" hasta la mitad y luego "zoom in"
-      const midPoint = 0.5;
-      let currentScale: number;
+      // Interpolación de escala (zoom out-in suave)
+      const scaleProgress = Math.sin(progress * Math.PI); // Curva sinusoidal
+      const currentScale = startScale * (1 - zoomFactor * scaleProgress);
 
-      if (progress <= midPoint) {
-        // Primera mitad: escalar de startScale a startScale * zoomOutFactor
-        const scaleProgress = progress / midPoint;
-        currentScale =
-          startScale -
-          (startScale - startScale * zoomOutFactor) *
-            easeInOutSine(scaleProgress);
-      } else {
-        // Segunda mitad: escalar de zoomOutFactor a targetScale
-        const scaleProgress = (progress - midPoint) / midPoint;
-        currentScale =
-          startScale * zoomOutFactor +
-          (targetScale - startScale * zoomOutFactor) *
-            easeInOutSine(scaleProgress);
-      }
+      // Interpolación de posición (considerando el zoom cambiante)
+      const posProgress =
+        progress < 0.5
+          ? 2 * progress * progress // Aceleración inicial
+          : 1 - Math.pow(-2 * progress + 2, 2) / 2; // Desaceleración final
 
-      // Movimiento: desde posición actual a objetivo (suave durante toda la animación)
-      const currentX = startX + (targetX - startX) * easedProgress;
-      const currentY = startY + (targetY - startY) * easedProgress;
+      const currentX = startX + (targetX - startX) * posProgress;
+      const currentY = startY + (targetY - startY) * posProgress;
 
-      // Aplicar transformaciones
       stage.scale({ x: currentScale, y: currentScale });
       stage.position({ x: currentX, y: currentY });
 
-      if (progress === 1) {
+      if (rawProgress === 1) {
         anim.stop();
-        stage.position({ x: targetX, y: targetY });
-        stage.scale({ x: targetScale, y: targetScale });
-        setScale(targetScale);
+        stage.scale({ x: targetScale, y: targetScale }); // Asegurar escala final
       }
-
-      stage.batchDraw(); // Redibujar para suavidad adicional
     });
 
     anim.start();
-
     return () => {
       anim.stop();
-      // Si la animación se interrumpe, volvemos al zoom original
-      stage.scale({ x: startScale, y: startScale });
-      setScale(startScale);
     };
   }, [currentRollIndex, rollCenters]);
 
-  const easeInOutSine = (t: number) => {
-    return -(Math.cos(Math.PI * t) - 1) / 2;
+  const easeOutSine = (t: number) => {
+    return Math.sin((t * Math.PI) / 2);
   };
 
   useEffect(() => {
