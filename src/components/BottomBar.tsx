@@ -8,7 +8,7 @@ import {
   ArrowLeft,
   ArrowRight,
   FileUser,
-  Images,
+  Undo2,
 } from "lucide-react";
 
 import Link from "next/link";
@@ -59,7 +59,7 @@ export function BottomBar() {
                   className="hover:bg-neutral-600/20  rounded-none"
                   onClick={() => setShowAbout(!showAbout)}
                 >
-                  <Link href="/">{showAbout ? <Images /> : <FileUser />}</Link>
+                  <Link href="/">{showAbout ? <Undo2 /> : <FileUser />}</Link>
                 </Button>
               </TooltipTrigger>
               <TooltipContent className="mb-2">
@@ -129,7 +129,7 @@ export function BottomBar() {
                   className="hover:bg-neutral-600/20  rounded-none"
                   asChild
                 >
-                  <Link href="/search">
+                  <Link href="/">
                     <Search />
                   </Link>
                 </Button>
