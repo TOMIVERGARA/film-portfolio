@@ -77,7 +77,7 @@ export async function GET(req: NextApiRequest, res: NextApiResponse) {
                     console.log('Recuperadas fotos:', resources.resources);
 
                     photos = resources.resources
-                        .filter((r: { public_id: string; }) => !r.public_id.startsWith('manifest'))  // excluir el manifest
+                        .filter(r => typeof r.public_id === 'string' && !r.public_id.startsWith('manifest'))
                         .map(r => ({
                             // 4) Generar URL optimizada: w_300,q_auto,f_auto
                             url: cloudinary.url(r.public_id, {
