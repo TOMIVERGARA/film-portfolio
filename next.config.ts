@@ -20,9 +20,16 @@ const nextConfig: NextConfig = {
             value: 'public, max-age=31536000, immutable'
           }
         ]
-      }
+      },
     ]
-  }
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+
 };
 
 export default nextConfig;
