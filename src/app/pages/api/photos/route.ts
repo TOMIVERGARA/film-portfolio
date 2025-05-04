@@ -73,10 +73,25 @@ export async function GET(req: NextApiRequest, res: NextApiResponse) {
                         media_metadata: true,
                         image_metadata: true,
                     });
-                    console.log('Recuperadas fotos:', resources.resources.length);
-                    console.log('Recuperadas fotos:', resources.resources);
 
-
+                    photos = resources.resources
+                        .filter(r => typeof r.public_id === 'string' && !r.public_id.startsWith('manifest'))
+                        .map(r => ({
+                            // 4) Generar URL optimizada: w_300,q_auto,f_auto
+                            url: cloudinary.url(r.public_id, {
+                                transformation: [
+                                    { width: 1000, crop: 'scale' },
+                                    { quality: 'auto' },
+                                    { fetch_format: 'auto' },
+                                ]
+                            }),
+                            width: 200,
+                            photo_metadata: {
+                                public_id: r.public_id,
+                                notes: r.metadata?.notes,
+                            }
+                        }));
+                    console.log('Recuperadas fotos:', photos);
                 } catch (err) {
                     console.warn('Error al cargar fotos para:', folder.path, err);
                     return null;
