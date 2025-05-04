@@ -2,9 +2,7 @@
 
 import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Home, Instagram, Linkedin } from "lucide-react";
-import Link from "next/link";
+import { Instagram, Linkedin } from "lucide-react";
 
 interface AboutMeProps {
   isVisible: boolean;

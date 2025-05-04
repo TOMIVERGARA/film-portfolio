@@ -1,6 +1,7 @@
 "use client";
 
 import { useCanvas } from "./CanvasContext";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
   Search,
@@ -49,7 +50,7 @@ export function BottomBar() {
     <>
       <AboutMe isVisible={showAbout} onClose={() => setShowAbout(false)} />
       <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50">
-        <div className="flex items-center gap-2 bg-neutral-950/40 backdrop-blur-lg  p-1 shadow-lg">
+        <div className="flex items-center gap-2 bg-neutral-950/40 backdrop-blur-lg p-1 shadow-lg">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -68,59 +69,74 @@ export function BottomBar() {
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-          <Separator className="h-7" orientation="vertical" />
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="icon"
-                  asChild
-                  className="hover:bg-neutral-600/20 rounded-none"
-                  onClick={handleMoveBackward}
-                >
-                  <Link href="/">
-                    <ArrowLeft />
-                  </Link>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent className="mb-2">move back</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <TooltipProvider delayDuration={800} skipDelayDuration={500}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="icon"
-                  asChild
-                  className="hover:bg-neutral-600/20 hover:animate-pulse rounded-none"
-                  onClick={handleCenter}
-                >
-                  <Link href="/">
-                    <Target />
-                  </Link>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent className="mb-2">center</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="icon"
-                  asChild
-                  className="hover:bg-neutral-600/20 rounded-none"
-                  onClick={handleMoveForward}
-                >
-                  <Link href="/">
-                    <ArrowRight />
-                  </Link>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent className="mb-2">move forward</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <Separator className="h-7" orientation="vertical" />
+          <AnimatePresence>
+            {!showAbout && (
+              <motion.div
+                key="middle-buttons"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.1 }}
+                className="flex items-center gap-2"
+              >
+                <Separator className="h-7" orientation="vertical" />
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="icon"
+                        asChild
+                        className="hover:bg-neutral-600/20 rounded-none"
+                        onClick={handleMoveBackward}
+                      >
+                        <Link href="/">
+                          <ArrowLeft />
+                        </Link>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent className="mb-2">move back</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <TooltipProvider delayDuration={800} skipDelayDuration={500}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="icon"
+                        asChild
+                        className="hover:bg-neutral-600/20 hover:animate-pulse rounded-none"
+                        onClick={handleCenter}
+                      >
+                        <Link href="/">
+                          <Target />
+                        </Link>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent className="mb-2">center</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="icon"
+                        asChild
+                        className="hover:bg-neutral-600/20 rounded-none"
+                        onClick={handleMoveForward}
+                      >
+                        <Link href="/">
+                          <ArrowRight />
+                        </Link>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent className="mb-2">
+                      move forward
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <Separator className="h-7" orientation="vertical" />
+              </motion.div>
+            )}
+          </AnimatePresence>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
