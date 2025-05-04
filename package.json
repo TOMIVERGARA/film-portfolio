@@ -15,7 +15,7 @@
     "@radix-ui/react-tooltip": "^1.2.4",
     "canvas": "^3.0.0-rc3",
     "class-variance-authority": "^0.7.1",
-    "cloudinary": "^2.6.0",
+    "cloudinary": "2.6.0",
     "clsx": "^2.1.1",
     "d3-force": "^3.0.0",
     "framer-motion": "^12.9.4",
