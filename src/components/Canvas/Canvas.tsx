@@ -8,7 +8,6 @@ import Label from "./Label";
 import {
   forceSimulation,
   forceCollide,
-  SimulationNodeDatum,
   forceLink,
   forceX,
   forceY,
@@ -63,23 +62,9 @@ const Canvas = () => {
     []
   );
 
-  const [rolls, setRolls] = useState<Roll[]>([]);
+  const { rolls } = useCanvas();
   const [scale, setScale] = useState(1);
   const [nodes, setNodes] = useState<any[]>([]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch("/pages/api/photos"); // Nota: cambié la ruta
-        const data = await response.json(); // Esperamos a que se resuelva la Promise
-        setRolls(data);
-      } catch (error) {
-        console.error("Error fetching photos:", error);
-      }
-    };
-
-    fetchData();
-  }, []);
 
   useEffect(() => {
     if (!rolls.length) return;

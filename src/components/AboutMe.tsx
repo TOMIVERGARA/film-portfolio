@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Instagram, Linkedin } from "lucide-react";
 
@@ -10,17 +10,36 @@ interface AboutMeProps {
 }
 
 export const AboutMe = ({ isVisible, onClose }: AboutMeProps) => {
-  // Bloquear el scroll cuando el modal está abierto
-  useEffect(() => {
-    if (isVisible) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const imageUrl =
+    "https://res.cloudinary.com/dobyiptl5/image/upload/f_auto,q_auto,w_800/profile_ejfesb.jpg";
 
-    return () => {
-      document.body.style.overflow = "";
+  useEffect(() => {
+    const loadImage = async () => {
+      try {
+        // Intenta obtener de cache primero
+        const cache = await caches.open("portfolio-v1");
+        const cachedResponse = await cache.match(imageUrl);
+
+        if (cachedResponse) {
+          setImageLoaded(true);
+          return;
+        }
+
+        // Si no está en cache, carga y guarda
+        const img = new Image();
+        img.src = imageUrl + "?v=1"; // Versión para forzar cache
+        img.fetchPriority = "high";
+        img.onload = () => {
+          cache.put(imageUrl, new Response(img.src));
+          setImageLoaded(true);
+        };
+      } catch (error) {
+        console.error("Error cargando imagen:", error);
+      }
     };
+
+    if (isVisible) loadImage();
   }, [isVisible]);
 
   return (
@@ -33,22 +52,35 @@ export const AboutMe = ({ isVisible, onClose }: AboutMeProps) => {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
         >
-          {/* Fondo con efecto frosted glass */}
           <div className="absolute inset-0 bg-black/40" />
-
-          {/* Contenedor principal centrado */}
           <div className="relative z-10 w-full max-w-6xl mx-auto flex flex-col md:flex-row items-center">
-            {/* Columna de la imagen (1/4) */}
-            <div className="w-full md:w-2/4 p-4 flex justify-center ml-auto">
+            {/* Columna de la imagen */}
+            <motion.div
+              className="w-full md:w-2/4 p-4 flex justify-center ml-auto"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 2, delay: 0.2 }} // Pequeño delay para mejor flujo
+            >
               <img
-                src="https://res.cloudinary.com/dobyiptl5/image/upload/profile_ejfesb.jpg"
+                src={imageUrl}
                 alt="Profile"
-                className="max-w-full h-auto  object-cover aspect-square"
+                className={`max-w-full h-auto object-cover aspect-square transition-opacity duration-300 ${
+                  imageLoaded ? "opacity-100" : "opacity-0"
+                }`}
+                onLoad={() => setImageLoaded(true)}
               />
-            </div>
+              {!imageLoaded && (
+                <div className="absolute w-full h-full bg-gray-200 animate-pulse aspect-square" />
+              )}
+            </motion.div>
 
             {/* Columna del texto (3/4) */}
-            <div className="w-full md:w-3/4 max-w-2xl p-4">
+            <motion.div
+              className="w-full md:w-3/4 max-w-2xl p-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 2, delay: 0.2 }} // Pequeño delay para mejor flujo
+            >
               <div className=" p-8 rounded-lg">
                 <h3 className="font-medium text-3xl mb-0">hello, i'm</h3>
                 <h1 className="font-bold text-7xl mb-4 font-serif">
@@ -85,7 +117,7 @@ export const AboutMe = ({ isVisible, onClose }: AboutMeProps) => {
                   </a>
                 </div>
               </div>
-            </div>
+            </motion.div>
           </div>
         </motion.div>
       )}
