@@ -1,13 +1,12 @@
 "use client";
 
 import { useCanvas } from "../CanvasContext";
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Stage, Layer, Circle } from "react-konva";
 import Photo from "./Photo";
 import Label from "./Label";
 import {
   forceSimulation,
-  forceCenter,
   forceCollide,
   SimulationNodeDatum,
   forceLink,
@@ -220,34 +219,37 @@ const Canvas = () => {
 
       const stage = stageRef.current;
       const startTime = Date.now();
-      const duration = 1000;
-      const zoomOutFactor = 0.4;
-      const startScale = stage.scaleX();
+      const duration = 800; // Duración óptima para todo tipo de distancias
 
+      // Posiciones iniciales y finales
       const startX = stage.x();
       const startY = stage.y();
-      const targetX = window.innerWidth / 2 - center.x * startScale;
-      const targetY = window.innerHeight / 2 - center.y * startScale;
+      const targetX = window.innerWidth / 2 - center.x * stage.scaleX();
+      const targetY = window.innerHeight / 2 - center.y * stage.scaleX();
 
       const anim = new Konva.Animation((frame) => {
         if (!frame) return;
 
         const elapsed = Date.now() - startTime;
         const progress = Math.min(elapsed / duration, 1);
+
+        // Easing suave sin zoom
         const easedProgress = easeOutSine(progress);
 
-        const currentScale =
-          startScale * (zoomOutFactor + (1 - zoomOutFactor) * easedProgress);
+        // Movimiento lineal puro
         const currentX = startX + (targetX - startX) * easedProgress;
         const currentY = startY + (targetY - startY) * easedProgress;
 
-        stage.scale({ x: currentScale, y: currentScale });
-        stage.position({ x: currentX, y: currentY });
+        stage.position({
+          x: currentX,
+          y: currentY,
+        });
 
         if (progress === 1) {
           anim.stop();
-          setScale(startScale);
-          setShouldCenter(false); // Resetea el flag
+          setShouldCenter(false);
+          // Ajuste final de precisión
+          stage.position({ x: targetX, y: targetY });
         }
       });
 
@@ -267,7 +269,7 @@ const Canvas = () => {
     const stage = stageRef.current;
     const startTime = Date.now();
     const duration = 3000; // Duración óptima para el efecto
-    const zoomFactor = 0.4; // Nivel máximo de zoom out
+    const zoomFactor = 0.2; // Nivel máximo de zoom out
 
     // Valores iniciales
     const startScale = stage.scaleX();
