@@ -75,25 +75,25 @@ export async function GET(req: NextApiRequest, res: NextApiResponse) {
                     });
 
                     photos = resources.resources
-                        .filter((r: { public_id: string; }) => typeof r.public_id === 'string' && !r.public_id.startsWith('manifest'))
-                        .map((r: { public_id: any; metadata: { notes: any; }; }) => {
-                            console.log({ public_id: r.public_id, type: typeof r.public_id });
-                            return {
+                        .filter((r: { resource_type: string; secure_url: any; }) => r.resource_type === 'image' && typeof r.secure_url === 'string')
+                        .map((r: { secure_url: any; public_id: any; metadata: { notes: any; }; }) => {
+                            // URL original
+                            const original = r.secure_url!;
+                            // Partimos en dos por "/upload/"
+                            const [prefix, suffix] = original.split('/upload/');
+                            // Construimos la transformación que quieras
+                            const transform = 'w_1000,c_scale,q_auto,f_auto';
+                            // Volvemos a unir
+                            const urlOptimizada = `${prefix}/upload/${transform}/${suffix}`;
 
-                                // 4) Generar URL optimizada: w_300,q_auto,f_auto
-                                url: cloudinary.url(String(r.public_id), {
-                                    transformation: [
-                                        { width: 1000, crop: 'scale' },
-                                        { quality: 'auto' },
-                                        { fetch_format: 'auto' },
-                                    ]
-                                }),
+                            return {
+                                url: urlOptimizada,
                                 width: 200,
                                 photo_metadata: {
                                     public_id: r.public_id,
                                     notes: r.metadata?.notes,
                                 }
-                            }
+                            };
                         });
                     console.log('Recuperadas fotos:', photos);
                 } catch (err) {
