@@ -81,7 +81,7 @@ export async function GET(req: NextApiRequest, res: NextApiResponse) {
                             return {
 
                                 // 4) Generar URL optimizada: w_300,q_auto,f_auto
-                                url: cloudinary.url(r.public_id, {
+                                url: cloudinary.url(String(r.public_id), {
                                     transformation: [
                                         { width: 1000, crop: 'scale' },
                                         { quality: 'auto' },
