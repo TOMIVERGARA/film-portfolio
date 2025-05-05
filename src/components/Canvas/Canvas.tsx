@@ -311,53 +311,74 @@ const Canvas = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const container = document.getElementById("konva-container");
+    if (!container) return;
+
+    const preventDefault = (e: TouchEvent) => e.preventDefault();
+
+    container.addEventListener("touchstart", preventDefault, {
+      passive: false,
+    });
+    container.addEventListener("touchmove", preventDefault, {
+      passive: false,
+    });
+
+    return () => {
+      container.removeEventListener("touchstart", preventDefault);
+      container.removeEventListener("touchmove", preventDefault);
+    };
+  }, []);
+
   return (
-    <Stage
-      ref={stageRef}
-      width={typeof window !== "undefined" ? window.innerWidth : 800}
-      height={typeof window !== "undefined" ? window.innerHeight : 600}
-      draggable
-      style={{ background: "#171717", position: "fixed", zIndex: 10 }}
-    >
-      <Layer>
-        {rollCenters.map((center, index) => (
-          <Circle
-            key={`debug-${index}`}
-            x={center.x}
-            y={center.y}
-            radius={5 / scale} // Radio que se ajusta con el zoom
-            fill={index === currentRollIndex ? "#3b82f6" : "#9ca3af"} // Azul para el actual, gris para otros
-            opacity={0.8}
-          />
-        ))}
-        {nodes.map((node, index) => {
-          if (node.isLabel) {
-            return (
-              <Label
-                key={index}
-                x={node.x}
-                y={node.y}
-                width={node.width}
-                zoomScale={scale}
-                metadata={node.metadata}
-              />
-            );
-          } else {
-            return (
-              <Photo
-                key={index}
-                url={node.imageUrl}
-                x={node.x}
-                y={node.y}
-                width={node.width}
-                zoomScale={scale}
-                note={node.note}
-              />
-            );
-          }
-        })}
-      </Layer>
-    </Stage>
+    <div id="konva-container">
+      <Stage
+        ref={stageRef}
+        width={typeof window !== "undefined" ? window.innerWidth : 800}
+        height={typeof window !== "undefined" ? window.innerHeight : 600}
+        draggable
+        style={{ background: "#171717", position: "fixed", zIndex: 10 }}
+      >
+        <Layer>
+          {rollCenters.map((center, index) => (
+            <Circle
+              key={`debug-${index}`}
+              x={center.x}
+              y={center.y}
+              radius={5 / scale} // Radio que se ajusta con el zoom
+              fill={index === currentRollIndex ? "#3b82f6" : "#9ca3af"} // Azul para el actual, gris para otros
+              opacity={0.8}
+            />
+          ))}
+          {nodes.map((node, index) => {
+            if (node.isLabel) {
+              return (
+                <Label
+                  key={index}
+                  x={node.x}
+                  y={node.y}
+                  width={node.width}
+                  zoomScale={scale}
+                  metadata={node.metadata}
+                />
+              );
+            } else {
+              return (
+                <Photo
+                  key={index}
+                  url={node.imageUrl}
+                  x={node.x}
+                  y={node.y}
+                  width={node.width}
+                  zoomScale={scale}
+                  note={node.note}
+                />
+              );
+            }
+          })}
+        </Layer>
+      </Stage>
+    </div>
   );
 };
 
