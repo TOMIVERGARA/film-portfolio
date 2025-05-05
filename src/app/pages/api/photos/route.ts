@@ -68,7 +68,8 @@ export async function GET(req: NextApiRequest, res: NextApiResponse) {
                 // 3) Listar imágenes de ese folder
                 let photos: Photo[] = [];
                 try {
-                    console.log('Cargando fotos para:', folder.path, typeof folder.path);
+
+
                     const resources = await cloudinary.api.resources_by_asset_folder(folder.path, {
                         media_metadata: true,
                         image_metadata: true,
@@ -95,7 +96,7 @@ export async function GET(req: NextApiRequest, res: NextApiResponse) {
                                 }
                             };
                         });
-                    console.log('Recuperadas fotos:', photos);
+
                 } catch (err) {
                     console.warn('Error al cargar fotos para:', folder.path, err);
                     return null;
