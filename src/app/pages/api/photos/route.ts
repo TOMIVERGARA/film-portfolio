@@ -1,6 +1,6 @@
 // pages/api/photos.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { v2 as cloudinary } from 'cloudinary';
+const cloudinary = require('cloudinary').v2;
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
@@ -75,22 +75,26 @@ export async function GET(req: NextApiRequest, res: NextApiResponse) {
                     });
 
                     photos = resources.resources
-                        .filter(r => typeof r.public_id === 'string' && !r.public_id.startsWith('manifest'))
-                        .map(r => ({
-                            // 4) Generar URL optimizada: w_300,q_auto,f_auto
-                            url: cloudinary.url(r.public_id, {
-                                transformation: [
-                                    { width: 1000, crop: 'scale' },
-                                    { quality: 'auto' },
-                                    { fetch_format: 'auto' },
-                                ]
-                            }),
-                            width: 200,
-                            photo_metadata: {
-                                public_id: r.public_id,
-                                notes: r.metadata?.notes,
+                        .filter((r: { public_id: string; }) => typeof r.public_id === 'string' && !r.public_id.startsWith('manifest'))
+                        .map((r: { public_id: any; metadata: { notes: any; }; }) => {
+                            console.log({ public_id: r.public_id, type: typeof r.public_id });
+                            return {
+
+                                // 4) Generar URL optimizada: w_300,q_auto,f_auto
+                                url: cloudinary.url(r.public_id, {
+                                    transformation: [
+                                        { width: 1000, crop: 'scale' },
+                                        { quality: 'auto' },
+                                        { fetch_format: 'auto' },
+                                    ]
+                                }),
+                                width: 200,
+                                photo_metadata: {
+                                    public_id: r.public_id,
+                                    notes: r.metadata?.notes,
+                                }
                             }
-                        }));
+                        });
                     console.log('Recuperadas fotos:', photos);
                 } catch (err) {
                     console.warn('Error al cargar fotos para:', folder.path, err);
