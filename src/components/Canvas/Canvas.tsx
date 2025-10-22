@@ -276,10 +276,11 @@ const Canvas = () => {
 
   useEffect(() => {
     const stage = stageRef.current;
+    let lastDistance = 0;
+    let isPinching = false;
 
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
-      const scaleBy = 1.05;
 
       const oldScale = stage.scaleX();
       const pointer = stage.getPointerPosition();
@@ -289,8 +290,28 @@ const Canvas = () => {
         y: (pointer.y - stage.y()) / oldScale,
       };
 
-      const direction = e.deltaY > 0 ? 1 : -1;
-      const newScale = direction > 0 ? oldScale * scaleBy : oldScale / scaleBy;
+      // Detectar si es trackpad o mouse
+      // Los trackpads suelen enviar valores decimales y más pequeños
+      const isTrackpad = Math.abs(e.deltaY) < 50 && e.deltaY % 1 !== 0;
+
+      let newScale;
+
+      if (isTrackpad) {
+        // Para trackpad: zoom suave y continuo
+        // Usar un factor mucho más pequeño para que sea realmente suave
+        const delta = e.deltaY / 1000; // Ajustado para mayor sensibilidad pero suave
+        newScale = oldScale * (1 + delta);
+
+        // Sin límites por frame para permitir movimiento fluido
+      } else {
+        // Para mouse: zoom discreto tradicional
+        const scaleBy = 1.08;
+        const direction = e.deltaY > 0 ? 1 : -1;
+        newScale = direction > 0 ? oldScale / scaleBy : oldScale * scaleBy;
+      }
+
+      // Limitar escala global
+      newScale = Math.max(0.1, Math.min(5, newScale));
 
       stage.scale({ x: newScale, y: newScale });
 
@@ -304,29 +325,90 @@ const Canvas = () => {
       setScale(newScale);
     };
 
-    stage.container().addEventListener("wheel", handleWheel);
-
-    return () => {
-      stage.container().removeEventListener("wheel", handleWheel);
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        isPinching = true;
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        lastDistance = Math.hypot(
+          touch2.clientX - touch1.clientX,
+          touch2.clientY - touch1.clientY
+        );
+      }
     };
-  }, []);
 
-  useEffect(() => {
-    const container = document.getElementById("konva-container");
-    if (!container) return;
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isPinching || e.touches.length !== 2) return;
 
-    const preventDefault = (e: TouchEvent) => e.preventDefault();
+      e.preventDefault();
 
-    container.addEventListener("touchstart", preventDefault, {
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const currentDistance = Math.hypot(
+        touch2.clientX - touch1.clientX,
+        touch2.clientY - touch1.clientY
+      );
+
+      if (lastDistance === 0) {
+        lastDistance = currentDistance;
+        return;
+      }
+
+      const oldScale = stage.scaleX();
+
+      // Centro entre los dos dedos
+      const centerX = (touch1.clientX + touch2.clientX) / 2;
+      const centerY = (touch1.clientY + touch2.clientY) / 2;
+
+      const mousePointTo = {
+        x: (centerX - stage.x()) / oldScale,
+        y: (centerY - stage.y()) / oldScale,
+      };
+
+      // Calcular nuevo scale con mayor sensibilidad
+      const scaleDelta = currentDistance / lastDistance;
+      // Amplificar el cambio para hacerlo más rápido
+      const amplifiedDelta = 1 + (scaleDelta - 1) * 2.5; // Factor 2.5 para mayor velocidad
+      let newScale = oldScale * amplifiedDelta;
+
+      // Limitar escala
+      newScale = Math.max(0.1, Math.min(5, newScale));
+
+      stage.scale({ x: newScale, y: newScale });
+
+      const newPos = {
+        x: centerX - mousePointTo.x * newScale,
+        y: centerY - mousePointTo.y * newScale,
+      };
+      stage.position(newPos);
+      stage.batchDraw();
+
+      setScale(newScale);
+      lastDistance = currentDistance;
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length < 2) {
+        isPinching = false;
+        lastDistance = 0;
+      }
+    };
+
+    const container = stage.container();
+    container.addEventListener("wheel", handleWheel);
+    container.addEventListener("touchstart", handleTouchStart, {
       passive: false,
     });
-    container.addEventListener("touchmove", preventDefault, {
+    container.addEventListener("touchmove", handleTouchMove, {
       passive: false,
     });
+    container.addEventListener("touchend", handleTouchEnd);
 
     return () => {
-      container.removeEventListener("touchstart", preventDefault);
-      container.removeEventListener("touchmove", preventDefault);
+      container.removeEventListener("wheel", handleWheel);
+      container.removeEventListener("touchstart", handleTouchStart);
+      container.removeEventListener("touchmove", handleTouchMove);
+      container.removeEventListener("touchend", handleTouchEnd);
     };
   }, []);
 
