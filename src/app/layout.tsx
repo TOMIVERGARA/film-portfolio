@@ -1,7 +1,6 @@
 "use client";
 
 import "./globals.css";
-import { BottomBar } from "@/components/BottomBar";
 import { CanvasProvider, useCanvas } from "@/components/CanvasContext";
 import { AnimatePresence, motion } from "framer-motion";
 import { LoadingScreen } from "@/components/LoadingScreen";
@@ -18,7 +17,6 @@ export default function RootLayout({
         <CanvasProvider>
           <PreloadWrapper>
             {children}
-            <BottomBar />
           </PreloadWrapper>
           <ServiceWorker />
         </CanvasProvider>

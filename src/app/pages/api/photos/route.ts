@@ -26,13 +26,10 @@ type Roll = {
 
 export async function GET(req: NextApiRequest, res: NextApiResponse) {
     try {
-        // 1) Listar carpetas en la raíz
         const folderList = await cloudinary.api.sub_folders('/portfolio/', { max_results: 100 });
 
-        // Procesar todos los folders y luego filtrar
         const allRolls = await Promise.all(
             folderList.folders.map(async (folder: { path: any; name: any; }) => {
-                // 2) Cargar manifest.json (raw resource)
                 let rollMetadata = null;
 
                 try {
@@ -50,26 +47,21 @@ export async function GET(req: NextApiRequest, res: NextApiResponse) {
                         const resp = await fetch(manifestResource.secure_url);
                         const metadata = await resp.json();
 
-                        // Verificar que el metadata no esté vacío
                         if (metadata && Object.keys(metadata).length > 0) {
                             rollMetadata = metadata;
                         }
                     }
                 } catch (err) {
                     console.warn('No se encontró manifest raw en:', folder.path, err);
-                    return null; // Retornar null si no hay manifest o está vacío
+                    return null;
                 }
 
-                // Si no hay metadata válido, descartar el roll
                 if (!rollMetadata) {
                     return null;
                 }
 
-                // 3) Listar imágenes de ese folder
                 let photos: Photo[] = [];
                 try {
-
-
                     const resources = await cloudinary.api.resources_by_asset_folder(folder.path, {
                         media_metadata: true,
                         image_metadata: true,
@@ -78,13 +70,9 @@ export async function GET(req: NextApiRequest, res: NextApiResponse) {
                     photos = resources.resources
                         .filter((r: { resource_type: string; secure_url: any; }) => r.resource_type === 'image' && typeof r.secure_url === 'string')
                         .map((r: { secure_url: any; public_id: any; metadata: { notes: any; }; }) => {
-                            // URL original
                             const original = r.secure_url!;
-                            // Partimos en dos por "/upload/"
                             const [prefix, suffix] = original.split('/upload/');
-                            // Construimos la transformación que quieras
                             const transform = 'w_1000,c_scale,q_auto,f_auto';
-                            // Volvemos a unir
                             const urlOptimizada = `${prefix}/upload/${transform}/${suffix}`;
 
                             return {
@@ -102,7 +90,6 @@ export async function GET(req: NextApiRequest, res: NextApiResponse) {
                     return null;
                 }
 
-                // Si no hay fotos, descartar el roll
                 if (photos.length === 0) {
                     return null;
                 }
@@ -115,7 +102,6 @@ export async function GET(req: NextApiRequest, res: NextApiResponse) {
             })
         );
 
-        // Filtrar los rolls que son null (no cumplen las condiciones)
         const rolls = allRolls.filter(roll => roll !== null) as Roll[];
 
         return new Response(JSON.stringify(rolls), {

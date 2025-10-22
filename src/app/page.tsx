@@ -1,5 +1,6 @@
 // pages/page.tsx
 import Canvas from "@/components/Canvas/Canvas";
+import { BottomBar } from "@/components/BottomBar";
 import { icons } from "lucide-react";
 
 export const metadata = {
@@ -12,6 +13,7 @@ export default function HomePage() {
   return (
     <div>
       <Canvas />
+      <BottomBar />
     </div>
   );
 }
