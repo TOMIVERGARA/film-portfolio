@@ -4,13 +4,6 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { motion } from "framer-motion";
 
 export default function AdminPage() {
@@ -50,52 +43,61 @@ export default function AdminPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="min-h-screen flex items-center justify-center bg-neutral-950 p-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
+          className="w-full max-w-md"
         >
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle className="text-2xl font-['Playfair']">
-                Administración
-              </CardTitle>
-              <CardDescription>
-                Ingresa tus credenciales para acceder
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="username">Usuario</Label>
-                  <Input
-                    id="username"
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    required
-                    className="font-['Quicksand']"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Contraseña</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="font-['Quicksand']"
-                  />
-                </div>
-                {error && <p className="text-sm text-destructive">{error}</p>}
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Iniciando sesión..." : "Iniciar sesión"}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+          <div className="bg-neutral-950/40 backdrop-blur-lg border border-neutral-800 p-8">
+            <div className="mb-6">
+              <h1 className="text-3xl font-['Playfair'] font-bold mb-2">
+                administración
+              </h1>
+              <p className="text-sm text-neutral-400">
+                ingresa tus credenciales para acceder
+              </p>
+            </div>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="username" className="text-sm lowercase">
+                  usuario
+                </Label>
+                <Input
+                  id="username"
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                  className="bg-neutral-900/50 border-neutral-800 rounded-none backdrop-blur-sm focus-visible:ring-neutral-600"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-sm lowercase">
+                  contraseña
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="bg-neutral-900/50 border-neutral-800 rounded-none backdrop-blur-sm focus-visible:ring-neutral-600"
+                />
+              </div>
+              {error && (
+                <p className="text-sm text-red-400 lowercase">{error}</p>
+              )}
+              <Button
+                type="submit"
+                className="w-full bg-neutral-800 hover:bg-neutral-700 rounded-none lowercase"
+                disabled={isLoading}
+              >
+                {isLoading ? "iniciando sesión..." : "iniciar sesión"}
+              </Button>
+            </form>
+          </div>
         </motion.div>
       </div>
     );

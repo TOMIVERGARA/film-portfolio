@@ -15,9 +15,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <CanvasProvider>
-          <PreloadWrapper>
-            {children}
-          </PreloadWrapper>
+          <PreloadWrapper>{children}</PreloadWrapper>
           <ServiceWorker />
         </CanvasProvider>
       </body>
