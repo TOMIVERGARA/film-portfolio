@@ -50,12 +50,12 @@ export default function AdminPage() {
           transition={{ duration: 0.5 }}
           className="w-full max-w-md"
         >
-          <div className="bg-neutral-950/40 backdrop-blur-lg border border-neutral-800 p-8">
+          <div className="bg-neutral-950/40 backdrop-blur-lg p-8">
             <div className="mb-6">
-              <h1 className="text-3xl font-['Playfair'] font-bold mb-2">
+              <h1 className="text-3xl font-['Playfair'] font-bold mb-2 lowercase">
                 administración
               </h1>
-              <p className="text-sm text-neutral-400">
+              <p className="text-sm text-neutral-400 lowercase">
                 ingresa tus credenciales para acceder
               </p>
             </div>
@@ -70,7 +70,7 @@ export default function AdminPage() {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
-                  className="bg-neutral-900/50 border-neutral-800 rounded-none backdrop-blur-sm focus-visible:ring-neutral-600"
+                  className="bg-black/0 border-neutral-800 rounded-none backdrop-blur-sm focus-visible:ring-0 focus-visible:border-neutral-600"
                 />
               </div>
               <div className="space-y-2">
@@ -83,7 +83,7 @@ export default function AdminPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="bg-neutral-900/50 border-neutral-800 rounded-none backdrop-blur-sm focus-visible:ring-neutral-600"
+                  className="bg-black/0 border-neutral-800 rounded-none backdrop-blur-sm focus-visible:ring-0 focus-visible:border-neutral-600"
                 />
               </div>
               {error && (
@@ -91,7 +91,7 @@ export default function AdminPage() {
               )}
               <Button
                 type="submit"
-                className="w-full bg-neutral-800 hover:bg-neutral-700 rounded-none lowercase"
+                className="w-full bg-black/0 hover:bg-neutral-600/20 rounded-none lowercase border border-neutral-800"
                 disabled={isLoading}
               >
                 {isLoading ? "iniciando sesión..." : "iniciar sesión"}
@@ -180,7 +180,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
+    <div className="min-h-screen bg-neutral-950 p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -188,147 +188,164 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           transition={{ duration: 0.5 }}
           className="space-y-6"
         >
-          <div className="flex justify-between items-center">
-            <h1 className="text-4xl font-['Playfair'] font-bold">
-              Panel de Administración
+          {/* Header */}
+          <div className="flex justify-between items-center bg-neutral-950/40 backdrop-blur-lg p-6">
+            <h1 className="text-4xl font-['Playfair'] font-bold lowercase">
+              panel de administración
             </h1>
-            <Button variant="outline" onClick={onLogout}>
-              Cerrar sesión
+            <Button
+              onClick={onLogout}
+              className="bg-black/0 hover:bg-neutral-600/20 rounded-none lowercase border border-neutral-800"
+            >
+              cerrar sesión
             </Button>
           </div>
 
+          {/* Success Message */}
           {uploadSuccess && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4"
+              className="bg-green-900/20 backdrop-blur-sm p-4"
             >
-              <p className="text-green-800 dark:text-green-200">
-                ✓ Roll subido exitosamente
+              <p className="text-green-400 lowercase">
+                ✓ roll subido exitosamente
               </p>
             </motion.div>
           )}
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="font-['Playfair']">
-                Crear nuevo roll
-              </CardTitle>
-              <CardDescription>
-                Completa la información y sube las imágenes para crear un nuevo
+          {/* Form Card */}
+          <div className="bg-neutral-950/40 backdrop-blur-lg p-8">
+            <div className="mb-6">
+              <h2 className="text-2xl font-['Playfair'] font-bold mb-2 lowercase">
+                crear nuevo roll
+              </h2>
+              <p className="text-sm text-neutral-400 lowercase">
+                completa la información y sube las imágenes para crear un nuevo
                 roll
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="rollId">ID del Roll *</Label>
-                    <Input
-                      id="rollId"
-                      type="text"
-                      value={rollId}
-                      onChange={(e) => setRollId(e.target.value)}
-                      required
-                      placeholder="ej: roll-001"
-                      className="font-['Quicksand']"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="rollName">Nombre del Roll *</Label>
-                    <Input
-                      id="rollName"
-                      type="text"
-                      value={rollName}
-                      onChange={(e) => setRollName(e.target.value)}
-                      required
-                      placeholder="ej: Santiago Centro"
-                      className="font-['Quicksand']"
-                    />
-                  </div>
-                </div>
+              </p>
+            </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="rollDate">Fecha</Label>
-                    <Input
-                      id="rollDate"
-                      type="text"
-                      value={rollDate}
-                      onChange={(e) => setRollDate(e.target.value)}
-                      placeholder="ej: Diciembre 2024"
-                      className="font-['Quicksand']"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="filmstock">Filmstock</Label>
-                    <Input
-                      id="filmstock"
-                      type="text"
-                      value={filmstock}
-                      onChange={(e) => setFilmstock(e.target.value)}
-                      placeholder="ej: Kodak Portra 400"
-                      className="font-['Quicksand']"
-                    />
-                  </div>
-                </div>
-
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="files">Imágenes *</Label>
+                  <Label htmlFor="rollId" className="text-sm lowercase">
+                    id del roll *
+                  </Label>
                   <Input
-                    id="files"
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    onChange={handleFileChange}
+                    id="rollId"
+                    type="text"
+                    value={rollId}
+                    onChange={(e) => setRollId(e.target.value)}
                     required
-                    className="font-['Quicksand'] cursor-pointer"
+                    placeholder="ej: roll-001"
+                    className="bg-black/0 border-neutral-800 rounded-none backdrop-blur-sm focus-visible:ring-0 focus-visible:border-neutral-600"
                   />
-                  {files.length > 0 && (
-                    <p className="text-sm text-muted-foreground">
-                      {files.length} archivo(s) seleccionado(s)
-                    </p>
-                  )}
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="rollName" className="text-sm lowercase">
+                    nombre del roll *
+                  </Label>
+                  <Input
+                    id="rollName"
+                    type="text"
+                    value={rollName}
+                    onChange={(e) => setRollName(e.target.value)}
+                    required
+                    placeholder="ej: Santiago Centro"
+                    className="bg-black/0 border-neutral-800 rounded-none backdrop-blur-sm focus-visible:ring-0 focus-visible:border-neutral-600"
+                  />
+                </div>
+              </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="rollDate" className="text-sm lowercase">
+                    fecha
+                  </Label>
+                  <Input
+                    id="rollDate"
+                    type="text"
+                    value={rollDate}
+                    onChange={(e) => setRollDate(e.target.value)}
+                    placeholder="ej: Diciembre 2024"
+                    className="bg-black/0 border-neutral-800 rounded-none backdrop-blur-sm focus-visible:ring-0 focus-visible:border-neutral-600"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="filmstock" className="text-sm lowercase">
+                    filmstock
+                  </Label>
+                  <Input
+                    id="filmstock"
+                    type="text"
+                    value={filmstock}
+                    onChange={(e) => setFilmstock(e.target.value)}
+                    placeholder="ej: Kodak Portra 400"
+                    className="bg-black/0 border-neutral-800 rounded-none backdrop-blur-sm focus-visible:ring-0 focus-visible:border-neutral-600"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="files" className="text-sm lowercase">
+                  imágenes *
+                </Label>
+                <Input
+                  id="files"
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  required
+                  className="bg-black/0 border-neutral-800 rounded-none backdrop-blur-sm cursor-pointer focus-visible:ring-0 focus-visible:border-neutral-600"
+                />
                 {files.length > 0 && (
-                  <div className="space-y-4">
-                    <Label>Notas para cada imagen (opcional)</Label>
-                    <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
-                      {files.map((file, index) => (
-                        <div
-                          key={index}
-                          className="border border-border rounded-lg p-3 space-y-2"
-                        >
-                          <p className="text-sm font-medium truncate">
-                            {index + 1}. {file.name}
-                          </p>
-                          <Input
-                            type="text"
-                            value={notes[index] || ""}
-                            onChange={(e) =>
-                              handleNoteChange(index, e.target.value)
-                            }
-                            placeholder="Añadir nota para esta imagen"
-                            className="font-['Quicksand'] text-sm"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                  <p className="text-sm text-neutral-400 lowercase">
+                    {files.length} archivo(s) seleccionado(s)
+                  </p>
                 )}
+              </div>
 
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={isUploading}
-                  size="lg"
-                >
-                  {isUploading ? "Subiendo..." : "Crear Roll"}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+              {files.length > 0 && (
+                <div className="space-y-4">
+                  <Label className="text-sm lowercase">
+                    notas para cada imagen (opcional)
+                  </Label>
+                  <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
+                    {files.map((file, index) => (
+                      <div
+                        key={index}
+                        className="bg-neutral-900/30 backdrop-blur-sm p-4 space-y-2"
+                      >
+                        <p className="text-sm font-medium truncate lowercase">
+                          {index + 1}. {file.name}
+                        </p>
+                        <Input
+                          type="text"
+                          value={notes[index] || ""}
+                          onChange={(e) =>
+                            handleNoteChange(index, e.target.value)
+                          }
+                          placeholder="añadir nota para esta imagen"
+                          className="bg-black/0 border-neutral-800 rounded-none backdrop-blur-sm text-sm focus-visible:ring-0 focus-visible:border-neutral-600"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                className="w-full bg-black/0 hover:bg-neutral-600/20 rounded-none lowercase border border-neutral-800"
+                disabled={isUploading}
+                size="lg"
+              >
+                {isUploading ? "subiendo..." : "crear roll"}
+              </Button>
+            </form>
+          </div>
         </motion.div>
       </div>
     </div>
