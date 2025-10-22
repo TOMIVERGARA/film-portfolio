@@ -43,16 +43,16 @@ export default function AdminPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-950 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-[#171717] p-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="w-full max-w-md"
         >
-          <div className="bg-neutral-950/40 backdrop-blur-lg p-8">
+          <div className="bg-neutral-950/40 backdrop-blur-lg p-8 shadow-lg border border-neutral-800">
             <div className="mb-6">
-              <h1 className="text-3xl font-['Playfair'] font-bold mb-2 lowercase">
+              <h1 className="text-3xl font-['Playfair'] font-bold mb-2 lowercase text-white">
                 administración
               </h1>
               <p className="text-sm text-neutral-400 lowercase">
@@ -61,7 +61,10 @@ export default function AdminPage() {
             </div>
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="username" className="text-sm lowercase">
+                <Label
+                  htmlFor="username"
+                  className="text-sm lowercase text-neutral-300"
+                >
                   usuario
                 </Label>
                 <Input
@@ -70,11 +73,14 @@ export default function AdminPage() {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
-                  className="bg-black/0 border-neutral-800 rounded-none backdrop-blur-sm focus-visible:ring-0 focus-visible:border-neutral-600"
+                  className="bg-transparent border-neutral-700 rounded-none backdrop-blur-sm focus-visible:ring-0 focus-visible:border-primary text-white"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm lowercase">
+                <Label
+                  htmlFor="password"
+                  className="text-sm lowercase text-neutral-300"
+                >
                   contraseña
                 </Label>
                 <Input
@@ -83,7 +89,7 @@ export default function AdminPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="bg-black/0 border-neutral-800 rounded-none backdrop-blur-sm focus-visible:ring-0 focus-visible:border-neutral-600"
+                  className="bg-transparent border-neutral-700 rounded-none backdrop-blur-sm focus-visible:ring-0 focus-visible:border-primary text-white"
                 />
               </div>
               {error && (
@@ -91,7 +97,7 @@ export default function AdminPage() {
               )}
               <Button
                 type="submit"
-                className="w-full bg-black/0 hover:bg-neutral-600/20 rounded-none lowercase border border-neutral-800"
+                className="w-full bg-transparent hover:bg-neutral-600/20 rounded-none lowercase border border-neutral-700 text-white"
                 disabled={isLoading}
               >
                 {isLoading ? "iniciando sesión..." : "iniciar sesión"}
@@ -180,7 +186,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-950 p-4 md:p-8">
+    <div className="min-h-screen bg-[#171717] p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -189,13 +195,13 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           className="space-y-6"
         >
           {/* Header */}
-          <div className="flex justify-between items-center bg-neutral-950/40 backdrop-blur-lg p-6">
-            <h1 className="text-4xl font-['Playfair'] font-bold lowercase">
+          <div className="flex justify-between items-center bg-neutral-950/40 backdrop-blur-lg p-6 shadow-lg border border-neutral-800">
+            <h1 className="text-4xl font-['Playfair'] font-bold lowercase text-white">
               panel de administración
             </h1>
             <Button
               onClick={onLogout}
-              className="bg-black/0 hover:bg-neutral-600/20 rounded-none lowercase border border-neutral-800"
+              className="bg-transparent hover:bg-neutral-600/20 rounded-none lowercase border border-neutral-700 text-white"
             >
               cerrar sesión
             </Button>
@@ -206,7 +212,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-green-900/20 backdrop-blur-sm p-4"
+              className="bg-green-900/20 backdrop-blur-sm p-4 border border-green-400/20"
             >
               <p className="text-green-400 lowercase">
                 ✓ roll subido exitosamente
@@ -215,9 +221,9 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           )}
 
           {/* Form Card */}
-          <div className="bg-neutral-950/40 backdrop-blur-lg p-8">
+          <div className="bg-neutral-950/40 backdrop-blur-lg p-8 shadow-lg border border-neutral-800">
             <div className="mb-6">
-              <h2 className="text-2xl font-['Playfair'] font-bold mb-2 lowercase">
+              <h2 className="text-2xl font-['Playfair'] font-bold mb-2 lowercase text-white">
                 crear nuevo roll
               </h2>
               <p className="text-sm text-neutral-400 lowercase">
@@ -229,7 +235,10 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="rollId" className="text-sm lowercase">
+                  <Label
+                    htmlFor="rollId"
+                    className="text-sm lowercase text-neutral-300"
+                  >
                     id del roll *
                   </Label>
                   <Input
@@ -239,11 +248,14 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                     onChange={(e) => setRollId(e.target.value)}
                     required
                     placeholder="ej: roll-001"
-                    className="bg-black/0 border-neutral-800 rounded-none backdrop-blur-sm focus-visible:ring-0 focus-visible:border-neutral-600"
+                    className="bg-transparent border-neutral-700 rounded-none backdrop-blur-sm focus-visible:ring-0 focus-visible:border-primary text-white"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="rollName" className="text-sm lowercase">
+                  <Label
+                    htmlFor="rollName"
+                    className="text-sm lowercase text-neutral-300"
+                  >
                     nombre del roll *
                   </Label>
                   <Input
@@ -253,14 +265,17 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                     onChange={(e) => setRollName(e.target.value)}
                     required
                     placeholder="ej: Santiago Centro"
-                    className="bg-black/0 border-neutral-800 rounded-none backdrop-blur-sm focus-visible:ring-0 focus-visible:border-neutral-600"
+                    className="bg-transparent border-neutral-700 rounded-none backdrop-blur-sm focus-visible:ring-0 focus-visible:border-primary text-white"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="rollDate" className="text-sm lowercase">
+                  <Label
+                    htmlFor="rollDate"
+                    className="text-sm lowercase text-neutral-300"
+                  >
                     fecha
                   </Label>
                   <Input
@@ -269,11 +284,14 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                     value={rollDate}
                     onChange={(e) => setRollDate(e.target.value)}
                     placeholder="ej: Diciembre 2024"
-                    className="bg-black/0 border-neutral-800 rounded-none backdrop-blur-sm focus-visible:ring-0 focus-visible:border-neutral-600"
+                    className="bg-transparent border-neutral-700 rounded-none backdrop-blur-sm focus-visible:ring-0 focus-visible:border-primary text-white"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="filmstock" className="text-sm lowercase">
+                  <Label
+                    htmlFor="filmstock"
+                    className="text-sm lowercase text-neutral-300"
+                  >
                     filmstock
                   </Label>
                   <Input
@@ -282,13 +300,16 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                     value={filmstock}
                     onChange={(e) => setFilmstock(e.target.value)}
                     placeholder="ej: Kodak Portra 400"
-                    className="bg-black/0 border-neutral-800 rounded-none backdrop-blur-sm focus-visible:ring-0 focus-visible:border-neutral-600"
+                    className="bg-transparent border-neutral-700 rounded-none backdrop-blur-sm focus-visible:ring-0 focus-visible:border-primary text-white"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="files" className="text-sm lowercase">
+                <Label
+                  htmlFor="files"
+                  className="text-sm lowercase text-neutral-300"
+                >
                   imágenes *
                 </Label>
                 <Input
@@ -298,7 +319,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                   accept="image/*"
                   onChange={handleFileChange}
                   required
-                  className="bg-black/0 border-neutral-800 rounded-none backdrop-blur-sm cursor-pointer focus-visible:ring-0 focus-visible:border-neutral-600"
+                  className="bg-transparent border-neutral-700 rounded-none backdrop-blur-sm cursor-pointer focus-visible:ring-0 focus-visible:border-primary text-white file:text-neutral-400"
                 />
                 {files.length > 0 && (
                   <p className="text-sm text-neutral-400 lowercase">
@@ -309,16 +330,16 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 
               {files.length > 0 && (
                 <div className="space-y-4">
-                  <Label className="text-sm lowercase">
+                  <Label className="text-sm lowercase text-neutral-300">
                     notas para cada imagen (opcional)
                   </Label>
                   <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
                     {files.map((file, index) => (
                       <div
                         key={index}
-                        className="bg-neutral-900/30 backdrop-blur-sm p-4 space-y-2"
+                        className="bg-neutral-950/30 backdrop-blur-sm p-4 space-y-2 border border-neutral-800"
                       >
-                        <p className="text-sm font-medium truncate lowercase">
+                        <p className="text-sm font-medium truncate lowercase text-neutral-300">
                           {index + 1}. {file.name}
                         </p>
                         <Input
@@ -328,7 +349,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                             handleNoteChange(index, e.target.value)
                           }
                           placeholder="añadir nota para esta imagen"
-                          className="bg-black/0 border-neutral-800 rounded-none backdrop-blur-sm text-sm focus-visible:ring-0 focus-visible:border-neutral-600"
+                          className="bg-transparent border-neutral-700 rounded-none backdrop-blur-sm text-sm focus-visible:ring-0 focus-visible:border-primary text-white"
                         />
                       </div>
                     ))}
@@ -338,7 +359,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 
               <Button
                 type="submit"
-                className="w-full bg-black/0 hover:bg-neutral-600/20 rounded-none lowercase border border-neutral-800"
+                className="w-full bg-transparent hover:bg-neutral-600/20 rounded-none lowercase border border-neutral-700 text-white"
                 disabled={isUploading}
                 size="lg"
               >
