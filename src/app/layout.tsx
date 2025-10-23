@@ -5,19 +5,29 @@ import { CanvasProvider, useCanvas } from "@/components/CanvasContext";
 import { AnimatePresence, motion } from "framer-motion";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { ServiceWorker } from "@/components/ServiceWorker";
+import { usePathname } from "next/navigation";
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const pathname = usePathname();
+  const isAdminRoute = pathname?.startsWith("/admin");
+
   return (
     <html lang="en">
       <body>
-        <CanvasProvider>
-          <PreloadWrapper>{children}</PreloadWrapper>
-          <ServiceWorker />
-        </CanvasProvider>
+        {isAdminRoute ? (
+          // Admin routes: no CanvasProvider, no loading screen
+          <>{children}</>
+        ) : (
+          // Public routes: with CanvasProvider and loading screen
+          <CanvasProvider>
+            <PreloadWrapper>{children}</PreloadWrapper>
+            <ServiceWorker />
+          </CanvasProvider>
+        )}
       </body>
     </html>
   );
