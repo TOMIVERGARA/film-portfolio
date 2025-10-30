@@ -49,20 +49,38 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenu>
               <SidebarMenuItem className="flex items-center gap-2">
                 <SidebarMenuButton
-                  tooltip="Quick Create"
+                  asChild
+                  tooltip="Home"
                   className="text-white border p-5 border-neutral-700 rounded-none hover:bg-neutral-600/20 active:bg-neutral-600/20 min-w-8 duration-200 ease-linear font-sans"
                 >
-                  <Home />
-                  <span>home</span>
+                  <a href="/admin">
+                    <Home />
+                    <span>home</span>
+                  </a>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem className="flex items-center gap-2">
                 <SidebarMenuButton
-                  tooltip="Quick Create"
+                  asChild
+                  tooltip="Quick Create Roll"
                   className="text-white border p-5 border-neutral-700 rounded-none hover:bg-neutral-600/20 active:bg-neutral-600/20 min-w-8 duration-200 ease-linear font-sans"
                 >
-                  <CirclePlus />
-                  <span>quick create roll</span>
+                  <a href="/admin/add-roll">
+                    <CirclePlus />
+                    <span>quick create roll</span>
+                  </a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem className="flex items-center gap-2">
+                <SidebarMenuButton
+                  asChild
+                  tooltip="Rolls"
+                  className="text-white border p-5 border-neutral-700 rounded-none hover:bg-neutral-600/20 active:bg-neutral-600/20 min-w-8 duration-200 ease-linear font-sans"
+                >
+                  <a href="/admin/rolls">
+                    <Camera />
+                    <span>rolls</span>
+                  </a>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -74,20 +92,26 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenu>
               <SidebarMenuItem className="flex items-center gap-2">
                 <SidebarMenuButton
-                  tooltip="Quick Create"
+                  asChild
+                  tooltip="Key Metrics"
                   className="text-white border p-5 border-neutral-700 rounded-none hover:bg-neutral-600/20 active:bg-neutral-600/20 min-w-8 duration-200 ease-linear font-sans"
                 >
-                  <ChartArea />
-                  <span>key metrics</span>
+                  <a href="/admin/metrics">
+                    <ChartArea />
+                    <span>key metrics</span>
+                  </a>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem className="flex items-center gap-2">
                 <SidebarMenuButton
-                  tooltip="Quick Create"
+                  asChild
+                  tooltip="Export"
                   className="text-white border p-5 border-neutral-700 rounded-none hover:bg-neutral-600/20 active:bg-neutral-600/20 min-w-8 duration-200 ease-linear font-sans"
                 >
-                  <Download />
-                  <span>export</span>
+                  <a href="/admin/export">
+                    <Download />
+                    <span>export</span>
+                  </a>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
