@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { ServiceWorker } from "@/components/ServiceWorker";
 import { usePathname } from "next/navigation";
+import { Toaster } from "@/components/ui/sonner";
 
 export default function RootLayout({
   children,
@@ -18,6 +19,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
+        {/* Sonner Toaster (shadcn wrapper) - disponible globalmente */}
+        {/* Uses components/ui/sonner.tsx added by shadcn */}
+        {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment */}
+        {/* @ts-ignore-next-line */}
+        <Toaster />
         {isAdminRoute ? (
           // Admin routes: no CanvasProvider, no loading screen
           <>{children}</>
