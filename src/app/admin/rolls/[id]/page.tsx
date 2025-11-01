@@ -4,8 +4,17 @@ import React, { useEffect, useRef, useState } from "react";
 import { showSuccess, showError } from "@/components/ui/notify";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft, Zap, Trash, PlusCircleIcon, Upload } from "lucide-react";
+import {
+  ChevronLeft,
+  Zap,
+  Trash,
+  PlusCircleIcon,
+  Upload,
+  Trash2,
+  Image,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { motion } from "framer-motion";
@@ -17,6 +26,14 @@ import {
   SheetFooter,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type Photo = {
   url: string;
@@ -62,6 +79,18 @@ export default function RollDetailPage() {
     }[]
   >([]);
   const [isUploadingNew, setIsUploadingNew] = useState(false);
+
+  // --- delete-photos state ---
+  const [deleteMode, setDeleteMode] = useState(false);
+  const [selectedPhotos, setSelectedPhotos] = useState<number[]>([]);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // --- delete-roll state ---
+  const [deleteRollDialogOpen, setDeleteRollDialogOpen] = useState(false);
+  const [confirmRollId, setConfirmRollId] = useState("");
+  const [isDeletingRoll, setIsDeletingRoll] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -301,10 +330,144 @@ export default function RollDetailPage() {
     }
   };
 
+  // --- delete functions ---
+  const togglePhotoSelection = (index: number) => {
+    setSelectedPhotos((prev) =>
+      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
+    );
+  };
+
+  const handleDeleteClick = () => {
+    if (deleteMode) {
+      if (selectedPhotos.length === 0) {
+        showError("No hay fotos seleccionadas");
+        return;
+      }
+      setDeleteDialogOpen(true);
+    } else {
+      setDeleteMode(true);
+      setSelectedPhotos([]);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteMode(false);
+    setSelectedPhotos([]);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (confirmText.toLowerCase() !== "eliminar") {
+      showError("Debes escribir 'eliminar' para confirmar");
+      return;
+    }
+
+    if (selectedPhotos.length === 0) {
+      showError("No hay fotos seleccionadas");
+      return;
+    }
+
+    setIsDeleting(true);
+
+    try {
+      const photosToDelete = selectedPhotos.map((idx) => roll!.photos[idx]);
+      const public_ids = photosToDelete
+        .map((p) => p.photo_metadata?.public_id)
+        .filter(Boolean);
+
+      if (public_ids.length === 0) {
+        showError("No se pudieron obtener los IDs de las fotos");
+        return;
+      }
+
+      const res = await fetch("/pages/api/admin/delete-photos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ public_ids }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Error al eliminar");
+
+      // Update local state
+      setRoll((prev) => {
+        if (!prev) return prev;
+        const copy = { ...prev } as Roll;
+        copy.photos = copy.photos.filter(
+          (_, idx) => !selectedPhotos.includes(idx)
+        );
+        return copy;
+      });
+
+      showSuccess(`${data.deleted} foto(s) eliminada(s)`);
+      setDeleteDialogOpen(false);
+      setDeleteMode(false);
+      setSelectedPhotos([]);
+      setConfirmText("");
+    } catch (err) {
+      console.error("Error deleting photos", err);
+      showError("Error al eliminar las fotos");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // --- delete roll functions ---
+  const handleDeleteRollClick = () => {
+    setDeleteRollDialogOpen(true);
+  };
+
+  const handleConfirmDeleteRoll = async () => {
+    if (confirmRollId !== roll?.id) {
+      showError(`Debes escribir exactamente '${roll?.id}' para confirmar`);
+      return;
+    }
+
+    setIsDeletingRoll(true);
+
+    try {
+      const res = await fetch("/pages/api/admin/delete-roll", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rollId: roll?.id }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Error al eliminar el roll");
+
+      showSuccess("Roll eliminado completamente");
+      setDeleteRollDialogOpen(false);
+      setConfirmRollId("");
+
+      // Redirect to rolls page after successful deletion
+      setTimeout(() => {
+        router.push("/admin/rolls");
+      }, 1000);
+    } catch (err) {
+      console.error("Error deleting roll", err);
+      showError("Error al eliminar el roll");
+    } finally {
+      setIsDeletingRoll(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="w-10/12 mx-auto p-6">
-        <div className="text-neutral-400">Cargando roll...</div>
+        <div className="mb-6">
+          <Skeleton className="h-12 w-2/5 mb-3 rounded-none" />
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-4 w-1/4 rounded-none" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          {Array.from({ length: 10 }).map((_, i) => (
+            <div key={i} className="">
+              <Skeleton className="w-full h-56 rounded-none" />
+              <Skeleton className="mt-2 h-3 w-3/4 rounded-none" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -514,176 +677,402 @@ export default function RollDetailPage() {
               </div>
             </div>
           </div>
-          <div>
-            <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="sm" className="rounded-none">
-                  <Upload /> add photos
+          <div className="flex gap-2">
+            {deleteMode ? (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-none border border-neutral-700"
+                  onClick={handleCancelDelete}
+                >
+                  cancelar
                 </Button>
-              </SheetTrigger>
-
-              <SheetContent side="right" className="border-l border-white/10">
-                <SheetHeader>
-                  <SheetTitle>añadir imágenes al roll</SheetTitle>
-                </SheetHeader>
-
-                <div className="p-4 overflow-y-auto flex-1">
-                  <div
-                    onDrop={handleNewDrop}
-                    onDragOver={(e) => e.preventDefault()}
-                    className="p-4 border border-dashed border-neutral-700 bg-transparent rounded-none cursor-pointer text-neutral-300"
-                    onClick={() => fileInputRef.current?.click()}
-                    role="button"
-                    aria-label="Drop images here or click to select"
-                  >
-                    <input
-                      ref={fileInputRef}
-                      id="new-files"
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      onChange={handleNewFileChange}
-                      className="hidden"
-                    />
-                    <p className="text-sm lowercase">
-                      arrastra las imágenes aquí o haz click para seleccionar
-                    </p>
-                    {newFiles.length > 0 && (
-                      <p className="text-sm text-neutral-400 lowercase mt-2">
-                        {newFiles.length} archivo(s) seleccionado(s)
-                      </p>
-                    )}
-                  </div>
-
-                  {newFiles.length > 0 && (
-                    <div className="mt-4 grid grid-cols-2 gap-3">
-                      {newFiles.map((item, index) => (
-                        <div
-                          key={index}
-                          className="bg-neutral-950/30 p-2 space-y-2 border border-neutral-800"
-                        >
-                          <div className="relative w-full h-28 bg-neutral-900/20 flex items-center justify-center overflow-hidden group">
-                            <img
-                              src={item.preview}
-                              alt={item.file.name}
-                              className="object-cover w-full h-full"
-                            />
-
-                            <div
-                              className="absolute inset-0 bg-neutral-800/60 flex flex-col items-center justify-center text-xs text-neutral-200 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                              onDoubleClick={() => removeNewFile(index)}
-                              role="button"
-                              aria-label={`Eliminar ${item.file.name}`}
-                              title="Doble click para eliminar"
-                            >
-                              <Trash size={18} className="mb-1" />
-                              <span className="select-none">
-                                doble click para eliminar
-                              </span>
-                            </div>
-                          </div>
-                          <p className="text-xs truncate lowercase text-neutral-300">
-                            {index + 1}. {item.file.name}
-                          </p>
-                          <input
-                            type="text"
-                            value={item.note}
-                            onChange={(e) =>
-                              handleNewNoteChange(index, e.target.value)
-                            }
-                            placeholder="click añadir nota..."
-                            className="bg-transparent border-b border-neutral-700 text-sm text-neutral-400 lowercase outline-none "
-                          />
-
-                          <div className="flex items-center gap-2 text-xs text-neutral-400 mt-2">
-                            <Zap size={14} className="text-green-400" />
-                            <span>
-                              {formatBytes(item.compressedSize)} •{" "}
-                              {item.originalSize > 0
-                                ? `${Math.max(
-                                    0,
-                                    Math.round(
-                                      (1 -
-                                        item.compressedSize /
-                                          item.originalSize) *
-                                        100
-                                    )
-                                  )}% comprimido`
-                                : "-"}
-                            </span>
-                          </div>
-                          {item.progress > 0 && (
-                            <div className="w-full bg-neutral-900 h-2 mt-1">
-                              <div
-                                className="bg-green-400 h-2"
-                                style={{ width: `${item.progress}%` }}
-                              />
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <SheetFooter>
-                  <div className="w-full">
-                    <Button
-                      onClick={handleUploadNew}
-                      className="w-full bg-transparent hover:bg-neutral-600/20 rounded-none lowercase border border-neutral-700 text-white"
-                      disabled={isUploadingNew}
-                      aria-busy={isUploadingNew}
-                    >
-                      {isUploadingNew ? (
-                        <>
-                          <svg
-                            className="animate-spin -ml-1 mr-2 h-4 w-4 text-white/90"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                          >
-                            <circle
-                              className="opacity-25"
-                              cx="12"
-                              cy="12"
-                              r="10"
-                              stroke="currentColor"
-                              strokeWidth="4"
-                            ></circle>
-                            <path
-                              className="opacity-75"
-                              fill="currentColor"
-                              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                            ></path>
-                          </svg>
-                          subiendo...
-                        </>
-                      ) : (
-                        "subir imágenes"
-                      )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-none border border-red-900 text-red-400 hover:bg-red-950/30"
+                  onClick={handleDeleteClick}
+                  disabled={selectedPhotos.length === 0}
+                >
+                  <Trash2 size={16} />
+                  eliminar ({selectedPhotos.length})
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-none  text-red-400 hover:bg-red-950/30"
+                  onClick={handleDeleteRollClick}
+                >
+                  <Trash size={16} />
+                  delete roll
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-none  text-red-400 hover:bg-red-950/30"
+                  onClick={handleDeleteClick}
+                >
+                  <Image size={16} />
+                  delete photos
+                </Button>
+                <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+                  <SheetTrigger asChild>
+                    <Button variant="ghost" size="sm" className="rounded-none">
+                      <Upload /> add photos
                     </Button>
-                  </div>
-                </SheetFooter>
-              </SheetContent>
-            </Sheet>
+                  </SheetTrigger>
+
+                  <SheetContent
+                    side="right"
+                    className="border-l border-white/10"
+                  >
+                    <SheetHeader>
+                      <SheetTitle>añadir imágenes al roll</SheetTitle>
+                    </SheetHeader>
+
+                    <div className="p-4 overflow-y-auto flex-1">
+                      <div
+                        onDrop={handleNewDrop}
+                        onDragOver={(e) => e.preventDefault()}
+                        className="p-4 border border-dashed border-neutral-700 bg-transparent rounded-none cursor-pointer text-neutral-300"
+                        onClick={() => fileInputRef.current?.click()}
+                        role="button"
+                        aria-label="Drop images here or click to select"
+                      >
+                        <input
+                          ref={fileInputRef}
+                          id="new-files"
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          onChange={handleNewFileChange}
+                          className="hidden"
+                        />
+                        <p className="text-sm lowercase">
+                          arrastra las imágenes aquí o haz click para
+                          seleccionar
+                        </p>
+                        {newFiles.length > 0 && (
+                          <p className="text-sm text-neutral-400 lowercase mt-2">
+                            {newFiles.length} archivo(s) seleccionado(s)
+                          </p>
+                        )}
+                      </div>
+
+                      {newFiles.length > 0 && (
+                        <div className="mt-4 grid grid-cols-2 gap-3">
+                          {newFiles.map((item, index) => (
+                            <div
+                              key={index}
+                              className="bg-neutral-950/30 p-2 space-y-2 border border-neutral-800"
+                            >
+                              <div className="relative w-full h-28 bg-neutral-900/20 flex items-center justify-center overflow-hidden group">
+                                <img
+                                  src={item.preview}
+                                  alt={item.file.name}
+                                  className="object-cover w-full h-full"
+                                />
+
+                                <div
+                                  className="absolute inset-0 bg-neutral-800/60 flex flex-col items-center justify-center text-xs text-neutral-200 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                                  onDoubleClick={() => removeNewFile(index)}
+                                  role="button"
+                                  aria-label={`Eliminar ${item.file.name}`}
+                                  title="Doble click para eliminar"
+                                >
+                                  <Trash size={18} className="mb-1" />
+                                  <span className="select-none">
+                                    doble click para eliminar
+                                  </span>
+                                </div>
+                              </div>
+                              <p className="text-xs truncate lowercase text-neutral-300">
+                                {index + 1}. {item.file.name}
+                              </p>
+                              <input
+                                type="text"
+                                value={item.note}
+                                onChange={(e) =>
+                                  handleNewNoteChange(index, e.target.value)
+                                }
+                                placeholder="click añadir nota..."
+                                className="bg-transparent border-b border-neutral-700 text-sm text-neutral-400 lowercase outline-none "
+                              />
+
+                              <div className="flex items-center gap-2 text-xs text-neutral-400 mt-2">
+                                <Zap size={14} className="text-green-400" />
+                                <span>
+                                  {formatBytes(item.compressedSize)} •{" "}
+                                  {item.originalSize > 0
+                                    ? `${Math.max(
+                                        0,
+                                        Math.round(
+                                          (1 -
+                                            item.compressedSize /
+                                              item.originalSize) *
+                                            100
+                                        )
+                                      )}% comprimido`
+                                    : "-"}
+                                </span>
+                              </div>
+                              {item.progress > 0 && (
+                                <div className="w-full bg-neutral-900 h-2 mt-1">
+                                  <div
+                                    className="bg-green-400 h-2"
+                                    style={{ width: `${item.progress}%` }}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <SheetFooter>
+                      <div className="w-full">
+                        <Button
+                          onClick={handleUploadNew}
+                          className="w-full bg-transparent hover:bg-neutral-600/20 rounded-none lowercase border border-neutral-700 text-white"
+                          disabled={isUploadingNew}
+                          aria-busy={isUploadingNew}
+                        >
+                          {isUploadingNew ? (
+                            <>
+                              <svg
+                                className="animate-spin -ml-1 mr-2 h-4 w-4 text-white/90"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                              >
+                                <circle
+                                  className="opacity-25"
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                ></circle>
+                                <path
+                                  className="opacity-75"
+                                  fill="currentColor"
+                                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                                ></path>
+                              </svg>
+                              subiendo...
+                            </>
+                          ) : (
+                            "subir imágenes"
+                          )}
+                        </Button>
+                      </div>
+                    </SheetFooter>
+                  </SheetContent>
+                </Sheet>
+              </>
+            )}
           </div>
         </div>
       </div>
 
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="bg-neutral-950 border border-red-900/50 rounded-none">
+          <DialogHeader>
+            <DialogTitle className="text-red-400 lowercase">
+              confirmar eliminación
+            </DialogTitle>
+            <DialogDescription className="text-neutral-400 lowercase">
+              estás a punto de eliminar {selectedPhotos.length} foto(s). esta
+              acción no se puede deshacer.
+              <br />
+              <br />
+              escribe <span className="text-red-400 font-bold">
+                eliminar
+              </span>{" "}
+              para confirmar:
+            </DialogDescription>
+          </DialogHeader>
+
+          <Input
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            placeholder="escribe 'eliminar'"
+            className="bg-transparent border-neutral-700 text-white lowercase rounded-none"
+            autoFocus
+          />
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setDeleteDialogOpen(false);
+                setConfirmText("");
+              }}
+              className="rounded-none border border-neutral-700"
+              disabled={isDeleting}
+            >
+              cancelar
+            </Button>
+            <Button
+              onClick={handleConfirmDelete}
+              className="rounded-none bg-red-900 hover:bg-red-800 text-white"
+              disabled={isDeleting || confirmText.toLowerCase() !== "eliminar"}
+            >
+              {isDeleting ? (
+                <>
+                  <svg
+                    className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                    ></path>
+                  </svg>
+                  eliminando...
+                </>
+              ) : (
+                "eliminar fotos"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Roll Confirmation Dialog */}
+      <Dialog
+        open={deleteRollDialogOpen}
+        onOpenChange={setDeleteRollDialogOpen}
+      >
+        <DialogContent className="bg-neutral-950 border border-red-900 rounded-none">
+          <DialogHeader>
+            <DialogTitle className="text-red-400 lowercase">
+              eliminar roll completo
+            </DialogTitle>
+            <DialogDescription className="text-neutral-400 lowercase">
+              <span className=" font-bold">atención:</span> estás a punto de
+              eliminar el roll completo "{roll?.metadata?.name || roll?.id}" con
+              todas sus {roll?.photos.length} foto(s).
+              <br />
+              <br />
+              esta acción es{" "}
+              <span className="text-red-400 font-bold">irreversible</span> y
+              eliminará permanentemente:
+              <ul className="mt-2 space-y-1">
+                <li>- todas las fotos del roll.</li>
+                <li>- todos los metadatos.</li>
+                <li>- el roll completo de cloudinary.</li>
+              </ul>
+              <br />
+              escribe el ID del roll{" "}
+              <span className="text-red-400 font-bold">{roll?.id}</span> para
+              confirmar:
+            </DialogDescription>
+          </DialogHeader>
+
+          <Input
+            value={confirmRollId}
+            onChange={(e) => setConfirmRollId(e.target.value)}
+            placeholder={`escribe '${roll?.id}'`}
+            className="bg-transparent border-red-900 text-white lowercase rounded-none font-mono"
+            autoFocus
+          />
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setDeleteRollDialogOpen(false);
+                setConfirmRollId("");
+              }}
+              className="rounded-none border border-neutral-700"
+              disabled={isDeletingRoll}
+            >
+              cancelar
+            </Button>
+            <Button
+              onClick={handleConfirmDeleteRoll}
+              className="rounded-none bg-red-900 hover:bg-red-800 text-white"
+              disabled={isDeletingRoll || confirmRollId !== roll?.id}
+            >
+              {isDeletingRoll ? (
+                <>
+                  <svg
+                    className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                    ></path>
+                  </svg>
+                  eliminando roll...
+                </>
+              ) : (
+                "eliminar roll permanentemente"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {roll.photos.map((p, idx) => {
+          const isSelected = selectedPhotos.includes(idx);
+
           const startEditing = () => {
+            if (deleteMode) return; // Don't edit in delete mode
             setEditingIndex(idx);
             setDraftNote(p.photo_metadata?.notes || "");
           };
 
           const handleTap = () => {
+            if (deleteMode) {
+              togglePhotoSelection(idx);
+              return;
+            }
             const now = Date.now();
             if (lastTapRef.current && now - lastTapRef.current < 300) {
               // double tap detected
               startEditing();
             }
             lastTapRef.current = now;
+          };
+
+          const handlePhotoClick = (e: React.MouseEvent) => {
+            if (deleteMode) {
+              e.preventDefault();
+              e.stopPropagation();
+              togglePhotoSelection(idx);
+            }
           };
 
           const saveNote = async () => {
@@ -737,23 +1126,56 @@ export default function RollDetailPage() {
           return (
             <div
               key={idx}
-              className="bg-neutral-950/30 p-2 border border-neutral-800"
+              className={`bg-neutral-950/30 p-2 border transition-all ${
+                isSelected
+                  ? "border-red-500 ring-2 ring-red-500/50"
+                  : "border-neutral-800"
+              } ${deleteMode ? "cursor-pointer" : ""}`}
+              onClick={deleteMode ? handlePhotoClick : undefined}
             >
               <div
-                className="w-full flex items-center justify-center bg-neutral-900"
-                onDoubleClick={startEditing}
+                className="w-full flex items-center justify-center bg-neutral-900 relative"
+                onDoubleClick={!deleteMode ? startEditing : undefined}
                 onTouchStart={handleTap}
               >
                 <img
                   src={p.url}
                   alt={`foto-${idx + 1}`}
-                  className="w-full h-auto object-contain"
+                  className={`w-full h-auto object-contain ${
+                    deleteMode ? "pointer-events-none" : ""
+                  }`}
                   loading="lazy"
                 />
+                {deleteMode && (
+                  <div
+                    className={`absolute inset-0 flex items-center justify-center transition-opacity ${
+                      isSelected
+                        ? "bg-red-900/40"
+                        : "bg-black/20 hover:bg-black/40"
+                    }`}
+                  >
+                    {isSelected && (
+                      <div className="w-12 h-12 rounded-full bg-red-500 flex items-center justify-center">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-8 w-8 text-white"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* input minimalista dentro del contenedor */}
-              {editingIndex === idx ? (
+              {!deleteMode && editingIndex === idx ? (
                 <div className="mt-2">
                   <input
                     autoFocus
@@ -776,7 +1198,7 @@ export default function RollDetailPage() {
                     disabled={saving}
                   />
                 </div>
-              ) : p.photo_metadata?.notes ? (
+              ) : !deleteMode && p.photo_metadata?.notes ? (
                 <div className="mt-2 text-xs text-neutral-400 lowercase">
                   {p.photo_metadata.notes}
                 </div>
