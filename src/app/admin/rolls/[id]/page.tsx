@@ -393,7 +393,7 @@ export default function RollDetailPage() {
                       if (!saving) saveNote();
                     }}
                     placeholder="Añadir nota..."
-                    className="w-full bg-transparent border-b border-neutral-700 text-sm text-white placeholder-neutral-500 outline-none p-1"
+                    className="w-full bg-transparent border-b border-neutral-700 text-xs text-neutral-400 placeholder-neutral-500 outline-none p-1"
                     disabled={saving}
                   />
                 </div>
