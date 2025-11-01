@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type Photo = {
   url: string;
@@ -107,8 +108,25 @@ export default function RollsPage() {
         </div>
 
         {loading && (
-          <div className="bg-neutral-950/40 backdrop-blur-lg p-6 border border-neutral-800 text-neutral-400">
-            cargando rolls...
+          <div className="space-y-6">
+            <div className="space-y-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="w-full bg-neutral-950/30 backdrop-blur-sm p-4 border border-neutral-800 flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-4">
+                    <Skeleton className="w-16 h-16 rounded-none" />
+                    <div>
+                      <Skeleton className="h-4 w-40 mb-2 rounded-none" />
+                      <Skeleton className="h-3 w-24 rounded-none" />
+                    </div>
+                  </div>
+
+                  <Skeleton className="h-4 w-16 rounded-none" />
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
