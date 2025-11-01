@@ -163,3 +163,12 @@ html, body {
   height: 100vh;
   width: 100vw;
 }
+
+/* Utility: ocultar la scrollbar pero mantener el scroll funcional */
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Safari and Chrome */
+}

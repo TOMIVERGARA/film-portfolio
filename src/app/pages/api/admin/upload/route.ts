@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Readable } from 'stream';
 const cloudinary = require('cloudinary').v2;
 
 cloudinary.config({
@@ -14,33 +15,44 @@ export async function POST(req: NextRequest) {
         const rollName = formData.get('rollName') as string;
         const rollDate = formData.get('rollDate') as string;
         const filmstock = formData.get('filmstock') as string;
-        
+
         const files = formData.getAll('files') as File[];
         const notes = formData.getAll('notes') as string[];
 
         if (!rollId || !rollName || files.length === 0) {
-            return NextResponse.json(
-                { error: 'Faltan datos requeridos' },
-                { status: 400 }
-            );
+            return NextResponse.json({ error: 'Faltan datos requeridos' }, { status: 400 });
         }
 
         const folderPath = `/portfolio/${rollId}`;
 
+        // Upload each file using a stream to avoid building huge data URIs in memory
         const uploadPromises = files.map(async (file, index) => {
             const arrayBuffer = await file.arrayBuffer();
             const buffer = Buffer.from(arrayBuffer);
-            const base64 = buffer.toString('base64');
-            const dataURI = `data:${file.type};base64,${base64}`;
 
-            const result = await cloudinary.uploader.upload(dataURI, {
-                folder: folderPath,
-                asset_folder: folderPath,
-                context: notes[index] ? { notes: notes[index] } : {},
-                metadata: notes[index] ? { notes: notes[index] } : {},
+            return new Promise((resolve, reject) => {
+                const stream = new Readable();
+                stream.push(buffer);
+                stream.push(null);
+
+                const options: any = {
+                    folder: folderPath,
+                    asset_folder: folderPath,
+                    resource_type: 'auto',
+                };
+
+                if (notes[index]) {
+                    options.context = { notes: notes[index] };
+                    options.metadata = { notes: notes[index] };
+                }
+
+                const uploadStream = cloudinary.uploader.upload_stream(options, (err: any, result: any) => {
+                    if (err) return reject(err);
+                    resolve(result);
+                });
+
+                stream.pipe(uploadStream);
             });
-
-            return result;
         });
 
         const uploadResults = await Promise.all(uploadPromises);
@@ -52,27 +64,26 @@ export async function POST(req: NextRequest) {
         };
 
         const manifestBuffer = Buffer.from(JSON.stringify(manifest));
-        const manifestBase64 = manifestBuffer.toString('base64');
-        const manifestDataURI = `data:application/json;base64,${manifestBase64}`;
+        // Upload manifest as raw json
+        await new Promise((resolve, reject) => {
+            const stream = new Readable();
+            stream.push(manifestBuffer);
+            stream.push(null);
 
-        await cloudinary.uploader.upload(manifestDataURI, {
-            folder: folderPath,
-            asset_folder: folderPath,
-            public_id: 'manifest',
-            resource_type: 'raw',
-            format: 'json',
+            const uploadStream = cloudinary.uploader.upload_stream(
+                { folder: folderPath, asset_folder: folderPath, public_id: 'manifest', resource_type: 'raw', format: 'json' },
+                (err: any, res: any) => {
+                    if (err) return reject(err);
+                    resolve(res);
+                }
+            );
+
+            stream.pipe(uploadStream);
         });
 
-        return NextResponse.json({
-            success: true,
-            uploadedImages: uploadResults.length,
-            rollId,
-        });
+        return NextResponse.json({ success: true, uploadedImages: uploadResults.length, rollId });
     } catch (error: any) {
         console.error('Error uploading to Cloudinary:', error);
-        return NextResponse.json(
-            { error: 'Error al subir archivos', details: error.message },
-            { status: 500 }
-        );
+        return NextResponse.json({ error: 'Error al subir archivos', details: error.message }, { status: 500 });
     }
 }
