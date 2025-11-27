@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useRef } from 'react';
-import { Image as KonvaImage, Text, Group } from 'react-konva';
-import useImage from '../Utils/useImage';
-import Konva from 'konva';
+import { useState, useEffect, useRef } from "react";
+import { Image as KonvaImage, Text, Group } from "react-konva";
+import useImage from "../../hooks/use-image";
+import Konva from "konva";
 
 interface PhotoProps {
   url: string;
@@ -31,7 +31,7 @@ const Photo = ({ url, x, y, width, zoomScale, note }: PhotoProps) => {
 
     const node = groupRef.current;
     const baseX = x - width / 2;
-    const baseY = y - (width / aspectRatio)/2;
+    const baseY = y - width / aspectRatio / 2;
     let anim: Konva.Animation;
 
     anim = new Konva.Animation((frame) => {
@@ -59,14 +59,10 @@ const Photo = ({ url, x, y, width, zoomScale, note }: PhotoProps) => {
 
   return (
     <Group ref={groupRef}>
-      <KonvaImage
-        image={image}
-        width={width}
-        height={width / aspectRatio}
-      />
+      <KonvaImage image={image} width={width} height={width / aspectRatio} />
       {note && (
         <Text
-          text={"*"+note}
+          text={"*" + note}
           width={width}
           align="left"
           fill="#ababab"

@@ -1,5 +1,5 @@
 // pages/page.tsx
-import Canvas from "@/components/Canvas/Canvas";
+import Canvas from "@/components/canvas/Canvas";
 import { BottomBar } from "@/components/BottomBar";
 import { icons } from "lucide-react";
 
