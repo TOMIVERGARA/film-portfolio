@@ -3,11 +3,8 @@
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { usePathname } from "next/navigation";
-
-interface AdminHeaderProps {
-  onLogout: () => void;
-}
+import { usePathname, useRouter } from "next/navigation";
+import { LogOut } from "lucide-react";
 
 const getPageTitle = (pathname: string): string => {
   if (pathname === "/admin") return "home";
@@ -21,7 +18,22 @@ const getPageTitle = (pathname: string): string => {
 
 export function SiteHeader() {
   const pathname = usePathname();
+  const router = useRouter();
   const title = getPageTitle(pathname);
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/pages/api/admin/login", {
+        method: "DELETE",
+      });
+      // Remove token from localStorage
+      localStorage.removeItem("auth-token");
+      router.push("/login");
+      router.refresh();
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+    }
+  };
 
   return (
     <header className="flex h-12 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
@@ -33,15 +45,14 @@ export function SiteHeader() {
         />
         <h1 className="text-base font-medium">{title}</h1>
         <div className="ml-auto flex items-center gap-2">
-          <Button variant="ghost" asChild size="sm" className="hidden sm:flex">
-            <a
-              href="https://github.com/shadcn-ui/ui/tree/main/apps/v4/app/(examples)/dashboard"
-              rel="noopener noreferrer"
-              target="_blank"
-              className="dark:text-foreground"
-            >
-              GitHub
-            </a>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleLogout}
+            className="flex items-center gap-2"
+          >
+            <LogOut className="h-4 w-4" />
+            <span className="hidden sm:inline">cerrar sesión</span>
           </Button>
         </div>
       </div>

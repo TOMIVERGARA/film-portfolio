@@ -14,7 +14,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const pathname = usePathname();
-  const isAdminRoute = pathname?.startsWith("/admin");
+  const isAdminRoute = pathname?.startsWith("/admin") || pathname === "/login";
 
   return (
     <html lang="en">
@@ -25,7 +25,7 @@ export default function RootLayout({
         {/* @ts-ignore-next-line */}
         <Toaster />
         {isAdminRoute ? (
-          // Admin routes: no CanvasProvider, no loading screen
+          // Admin routes and login: no CanvasProvider, no loading screen
           <>{children}</>
         ) : (
           // Public routes: with CanvasProvider and loading screen

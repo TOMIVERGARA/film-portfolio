@@ -1,5 +1,6 @@
 import "../globals.css";
 import { AdminLayoutClient } from "@/components/admin/AdminLayoutClient";
+import { AuthGuard } from "@/components/admin/AuthGuard";
 import { cookies } from "next/headers";
 
 export default async function AdminLayout({
@@ -10,5 +11,11 @@ export default async function AdminLayout({
   const cookieStore = await cookies();
   const defaultOpen = cookieStore.get("sidebar_state")?.value === "true";
 
-  return <AdminLayoutClient defaultOpen={defaultOpen}>{children}</AdminLayoutClient>;
+  return (
+    <AuthGuard>
+      <AdminLayoutClient defaultOpen={defaultOpen}>
+        {children}
+      </AdminLayoutClient>
+    </AuthGuard>
+  );
 }

@@ -9,6 +9,7 @@ import {
   ChartArea,
   Download,
   PlusCircle,
+  Users,
 } from "lucide-react";
 import {
   Sidebar,
@@ -112,6 +113,25 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <a href="/admin/export">
                     <Download />
                     <span>export</span>
+                  </a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        <SidebarGroup className="group-data-[collapsible=icon]:hidden">
+          <SidebarGroupLabel>settings</SidebarGroupLabel>
+          <SidebarGroupContent className="flex flex-col gap-2">
+            <SidebarMenu>
+              <SidebarMenuItem className="flex items-center gap-2">
+                <SidebarMenuButton
+                  asChild
+                  tooltip="Users"
+                  className="text-white border p-5 border-neutral-700 rounded-none hover:bg-neutral-600/20 active:bg-neutral-600/20 min-w-8 duration-200 ease-linear font-sans"
+                >
+                  <a href="/admin/users">
+                    <Users />
+                    <span>usuarios</span>
                   </a>
                 </SidebarMenuButton>
               </SidebarMenuItem>
