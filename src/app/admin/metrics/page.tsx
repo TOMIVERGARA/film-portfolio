@@ -11,6 +11,7 @@ import { DevicesChart } from "./components/DevicesChart";
 import { BrowsersChart } from "./components/BrowsersChart";
 import { GeoMap } from "./components/GeoMap";
 import { EventsChart } from "./components/EventsChart";
+import { MetricsPageSkeleton } from "./components/SkeletonLoaders";
 import {
   Dialog,
   DialogContent,
@@ -122,13 +123,7 @@ export default function MetricsPage() {
   };
 
   if (loading) {
-    return (
-      <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-center h-96">
-          <p className="text-neutral-400 lowercase">cargando métricas...</p>
-        </div>
-      </div>
-    );
+    return <MetricsPageSkeleton />;
   }
 
   if (!stats) {

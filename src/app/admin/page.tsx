@@ -91,8 +91,8 @@ export default function AdminHomePage() {
                   key={i}
                   className="bg-neutral-950/40 backdrop-blur-lg p-6 border border-neutral-800 animate-pulse"
                 >
-                  <div className="h-8 bg-neutral-700 rounded mb-4"></div>
-                  <div className="h-12 bg-neutral-700 rounded"></div>
+                  <div className="h-8 bg-neutral-700 rounded-none mb-4"></div>
+                  <div className="h-12 bg-neutral-700 rounded-none"></div>
                 </div>
               ))}
             </div>
@@ -221,18 +221,6 @@ export default function AdminHomePage() {
                 </div>
               </motion.div>
             </Link>
-          </div>
-        </div>
-
-        {/* Recent Activity */}
-        <div className="space-y-4">
-          <h2 className="text-2xl font-bold lowercase text-white">
-            actividad reciente
-          </h2>
-          <div className="bg-neutral-950/40 backdrop-blur-lg p-8 border border-neutral-800">
-            <p className="text-center text-neutral-500 lowercase">
-              no hay actividad reciente
-            </p>
           </div>
         </div>
       </motion.div>
