@@ -217,6 +217,12 @@ export default function AddRollPage() {
           fd.append("files", item.file);
           fd.append("notes", item.note || "");
 
+          // Get auth token from localStorage
+          const token = localStorage.getItem("auth_token");
+          if (token) {
+            xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+          }
+
           xhr.open("POST", "/pages/api/admin/upload");
 
           xhr.upload.onprogress = (ev) => {

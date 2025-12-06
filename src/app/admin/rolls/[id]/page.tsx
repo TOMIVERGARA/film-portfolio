@@ -34,6 +34,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { authenticatedPost } from "@/lib/api-client";
 
 type Photo = {
   url: string;
@@ -379,15 +380,11 @@ export default function RollDetailPage() {
         return;
       }
 
-      const res = await fetch("/pages/api/admin/delete-photos", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ public_ids }),
+      const res = await authenticatedPost("/pages/api/admin/delete-photos", {
+        public_ids,
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Error al eliminar");
-
+      const data = res;
       // Update local state
       setRoll((prev) => {
         if (!prev) return prev;
@@ -425,14 +422,9 @@ export default function RollDetailPage() {
     setIsDeletingRoll(true);
 
     try {
-      const res = await fetch("/pages/api/admin/delete-roll", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rollId: roll?.id }),
+      const data = await authenticatedPost("/pages/api/admin/delete-roll", {
+        rollId: roll?.id,
       });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Error al eliminar el roll");
 
       showSuccess("Roll eliminado completamente");
       setDeleteRollDialogOpen(false);
@@ -1084,17 +1076,13 @@ export default function RollDetailPage() {
 
             setSaving(true);
             try {
-              const res = await fetch("/pages/api/admin/update-metadata", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
+              const data = await authenticatedPost(
+                "/pages/api/admin/update-metadata",
+                {
                   public_id: p.photo_metadata.public_id,
                   notes: draftNote,
-                }),
-              });
-
-              const data = await res.json();
-              if (!res.ok) throw new Error(data?.error || "Error updating");
+                }
+              );
 
               // update local state
               setRoll((prev) => {

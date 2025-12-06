@@ -5,6 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { usePathname, useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
+import { clearAuthToken, authenticatedPost } from "@/lib/api-client";
 
 const getPageTitle = (pathname: string): string => {
   if (pathname === "/admin") return "home";
@@ -12,6 +13,7 @@ const getPageTitle = (pathname: string): string => {
   if (pathname === "/admin/add-roll") return "add roll";
   if (pathname === "/admin/metrics") return "metrics";
   if (pathname === "/admin/export") return "export";
+  if (pathname === "/admin/users") return "users";
   if (pathname.startsWith("/admin/rolls/")) return "roll details";
   return "admin";
 };
@@ -19,19 +21,24 @@ const getPageTitle = (pathname: string): string => {
 export function SiteHeader() {
   const pathname = usePathname();
   const router = useRouter();
-  const title = getPageTitle(pathname);
+  const title = getPageTitle(pathname || "/admin");
 
   const handleLogout = async () => {
     try {
-      await fetch("/pages/api/admin/login", {
-        method: "DELETE",
+      // Call logout endpoint to revoke session
+      await authenticatedPost("/pages/api/admin/logout", {}).catch(() => {
+        // Ignore errors, still clear token locally
       });
-      // Remove token from localStorage
-      localStorage.removeItem("auth-token");
+
+      // Clear token using centralized function
+      clearAuthToken();
       router.push("/login");
       router.refresh();
     } catch (error) {
       console.error("Error al cerrar sesión:", error);
+      // Still clear token and redirect even if endpoint fails
+      clearAuthToken();
+      router.push("/login");
     }
   };
 

@@ -32,6 +32,12 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { generateMemorablePassword } from "@/lib/password-generator";
+import {
+  authenticatedFetchJSON,
+  authenticatedPost,
+  authenticatedPut,
+  authenticatedDelete,
+} from "@/lib/api-client";
 
 interface User {
   id: string;
@@ -110,13 +116,12 @@ export default function UsersPage() {
       if (field === "email") setCheckingEmail(true);
 
       try {
-        const response = await fetch("/pages/api/admin/check-availability", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ [field]: value }),
-        });
-
-        const data = await response.json();
+        const data = await authenticatedPost(
+          "/pages/api/admin/check-availability",
+          {
+            [field]: value,
+          }
+        );
 
         if (data.success) {
           if (field === "username") {
@@ -167,8 +172,7 @@ export default function UsersPage() {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch("/pages/api/admin/users");
-      const data = await response.json();
+      const data = await authenticatedFetchJSON("/pages/api/admin/users");
       if (data.success) {
         setUsers(data.users);
       }
@@ -193,16 +197,10 @@ export default function UsersPage() {
     }
 
     try {
-      const response = await fetch("/pages/api/admin/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData,
-          password: generatedPassword, // Use generated password
-        }),
+      const data = await authenticatedPost("/pages/api/admin/users", {
+        ...formData,
+        password: generatedPassword, // Use generated password
       });
-
-      const data = await response.json();
 
       if (data.success) {
         toast.success("Usuario creado correctamente");
@@ -270,17 +268,14 @@ export default function UsersPage() {
     if (!editingUser) return;
 
     try {
-      const response = await fetch(`/pages/api/admin/users/${editingUser.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const data = await authenticatedPut(
+        `/pages/api/admin/users/${editingUser.id}`,
+        {
           email: formData.email,
           full_name: formData.full_name,
           password: formData.password || undefined,
-        }),
-      });
-
-      const data = await response.json();
+        }
+      );
 
       if (data.success) {
         toast.success("Usuario actualizado correctamente");
@@ -323,11 +318,9 @@ export default function UsersPage() {
     setIsDeleting(true);
 
     try {
-      const response = await fetch(`/pages/api/admin/users/${userId}`, {
-        method: "DELETE",
-      });
-
-      const data = await response.json();
+      const data = await authenticatedDelete(
+        `/pages/api/admin/users/${userId}`
+      );
 
       if (data.success) {
         toast.success("Usuario eliminado correctamente");
@@ -360,13 +353,9 @@ export default function UsersPage() {
     }
 
     try {
-      const response = await fetch(`/pages/api/admin/users/${user.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ is_active: !user.is_active }),
+      const data = await authenticatedPut(`/pages/api/admin/users/${user.id}`, {
+        is_active: !user.is_active,
       });
-
-      const data = await response.json();
 
       if (data.success) {
         toast.success(

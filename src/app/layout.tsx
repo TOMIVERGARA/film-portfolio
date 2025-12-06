@@ -2,6 +2,7 @@
 
 import "./globals.css";
 import { CanvasProvider, useCanvas } from "@/components/CanvasContext";
+import { AnalyticsProvider } from "@/components/AnalyticsProvider";
 import { AnimatePresence, motion } from "framer-motion";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { ServiceWorker } from "@/components/ServiceWorker";
@@ -25,14 +26,16 @@ export default function RootLayout({
         {/* @ts-ignore-next-line */}
         <Toaster />
         {isAdminRoute ? (
-          // Admin routes and login: no CanvasProvider, no loading screen
+          // Admin routes and login: no CanvasProvider, no loading screen, no analytics
           <>{children}</>
         ) : (
-          // Public routes: with CanvasProvider and loading screen
-          <CanvasProvider>
-            <PreloadWrapper>{children}</PreloadWrapper>
-            <ServiceWorker />
-          </CanvasProvider>
+          // Public routes: with CanvasProvider, loading screen, and analytics
+          <AnalyticsProvider>
+            <CanvasProvider>
+              <PreloadWrapper>{children}</PreloadWrapper>
+              <ServiceWorker />
+            </CanvasProvider>
+          </AnalyticsProvider>
         )}
       </body>
     </html>

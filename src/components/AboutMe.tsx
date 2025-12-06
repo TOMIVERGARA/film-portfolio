@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Instagram, Linkedin } from "lucide-react";
+import { useAnalyticsContext } from "./AnalyticsProvider";
 
 interface AboutMeProps {
   isVisible: boolean;
@@ -11,11 +12,14 @@ interface AboutMeProps {
 
 export const AboutMe = ({ isVisible, onClose }: AboutMeProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const { trackEvent } = useAnalyticsContext();
   const imageUrl =
     "https://res.cloudinary.com/dobyiptl5/image/upload/f_auto,q_auto,w_800/profile_ejfesb.jpg";
 
   useEffect(() => {
     const loadImage = async () => {
+      const startTime = Date.now();
+
       try {
         // Intenta obtener de cache primero
         const cache = await caches.open("portfolio-v1");
@@ -23,6 +27,13 @@ export const AboutMe = ({ isVisible, onClose }: AboutMeProps) => {
 
         if (cachedResponse) {
           setImageLoaded(true);
+          const loadTime = Date.now() - startTime;
+          trackEvent({
+            eventType: "about_me_image_loaded",
+            eventCategory: "performance",
+            eventLabel: "cached",
+            eventValue: loadTime,
+          });
           return;
         }
 
@@ -33,14 +44,29 @@ export const AboutMe = ({ isVisible, onClose }: AboutMeProps) => {
         img.onload = () => {
           cache.put(imageUrl, new Response(img.src));
           setImageLoaded(true);
+          const loadTime = Date.now() - startTime;
+          trackEvent({
+            eventType: "about_me_image_loaded",
+            eventCategory: "performance",
+            eventLabel: "network",
+            eventValue: loadTime,
+          });
         };
       } catch (error) {
         console.error("Error cargando imagen:", error);
       }
     };
 
-    if (isVisible) loadImage();
-  }, [isVisible]);
+    if (isVisible) {
+      loadImage();
+      // Track about me opened
+      trackEvent({
+        eventType: "about_me_opened",
+        eventCategory: "engagement",
+        eventLabel: "user_interaction",
+      });
+    }
+  }, [isVisible, trackEvent]);
 
   return (
     <AnimatePresence>
