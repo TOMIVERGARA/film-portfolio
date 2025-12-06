@@ -64,27 +64,72 @@ export function CanvasProvider({ children }: { children: React.ReactNode }) {
         roll.photos.map((photo) => photo.url)
       );
 
-      // 3. Precargar imágenes
+      // 3. Precargar imágenes y trackear tiempos de carga
       let loadedCount = 0;
+      const loadTimes: number[] = [];
+      const preloadStartTime = performance.now();
+
       await Promise.all(
         allImageUrls.map(
           (url: string) =>
             new Promise((resolve) => {
+              const imgStartTime = performance.now();
               const img = new Image();
               img.src = url;
               img.onload = () => {
+                const imgLoadTime = performance.now() - imgStartTime;
+                loadTimes.push(imgLoadTime);
                 loadedCount++;
                 setPreloadProgress(
                   Math.round((loadedCount / allImageUrls.length) * 100)
                 );
                 resolve(true);
               };
-              img.onerror = resolve;
+              img.onerror = () => {
+                loadedCount++;
+                setPreloadProgress(
+                  Math.round((loadedCount / allImageUrls.length) * 100)
+                );
+                resolve(false);
+              };
             })
         )
       );
 
-      // 4. Marcar como listo
+      // 4. Calcular y enviar métricas de performance
+      if (loadTimes.length > 0) {
+        const firstPhotoLoadTime = Math.min(...loadTimes);
+        const avgPhotoLoadTime =
+          loadTimes.reduce((a, b) => a + b, 0) / loadTimes.length;
+        const totalPhotosLoaded = loadTimes.length;
+
+        console.log("[CanvasContext] Photos preloaded. Metrics:", {
+          firstPhotoLoadTime: Math.round(firstPhotoLoadTime),
+          avgPhotoLoadTime: Math.round(avgPhotoLoadTime),
+          totalPhotosLoaded,
+        });
+
+        // Enviar métricas a analytics
+        try {
+          await fetch("/pages/api/analytics/performance", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              sessionId: sessionStorage.getItem("analytics_session_id"),
+              firstPhotoLoadTime: Math.round(firstPhotoLoadTime),
+              avgPhotoLoadTime: Math.round(avgPhotoLoadTime),
+              totalPhotosLoaded,
+            }),
+          });
+        } catch (error) {
+          console.error(
+            "[CanvasContext] Failed to track photo load metrics:",
+            error
+          );
+        }
+      }
+
+      // 5. Marcar como listo
       setAppReady(true);
     } catch (error) {
       console.error("Error precargando recursos:", error);

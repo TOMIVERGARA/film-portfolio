@@ -11,10 +11,19 @@ interface PhotoProps {
   y: number;
   width: number;
   zoomScale: number;
-  note?: string; // 👈 Nuevo prop para la nota
+  note?: string;
+  onImageLoad?: (loadTime: number) => void;
 }
 
-const Photo = ({ url, x, y, width, zoomScale, note }: PhotoProps) => {
+const Photo = ({
+  url,
+  x,
+  y,
+  width,
+  zoomScale,
+  note,
+  onImageLoad,
+}: PhotoProps) => {
   const image = useImage(url);
   const groupRef = useRef<any>(null);
   const [aspectRatio, setAspectRatio] = useState(1);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCanvas } from "../CanvasContext";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Stage, Layer, Circle } from "react-konva";
 import Photo from "./Photo";
 import Label from "./Label";
@@ -14,6 +14,7 @@ import {
 } from "d3-force";
 import Konva from "konva";
 import { Roll, GraphNode } from "@/types";
+import { useAnalyticsContext } from "../AnalyticsProvider";
 
 function generateLinks(nodes: GraphNode[]) {
   const links = [];
