@@ -3,6 +3,10 @@ import { AdminLayoutClient } from "@/components/admin/AdminLayoutClient";
 import { AuthGuard } from "@/components/admin/AuthGuard";
 import { cookies } from "next/headers";
 
+export const metadata = {
+  title: "portfolio - admin",
+};
+
 export default async function AdminLayout({
   children,
 }: {
