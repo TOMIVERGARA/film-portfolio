@@ -100,7 +100,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 >
                   <a href="/admin/metrics">
                     <ChartArea />
-                    <span>key metrics</span>
+                    <span>analytics</span>
                   </a>
                 </SidebarMenuButton>
               </SidebarMenuItem>
