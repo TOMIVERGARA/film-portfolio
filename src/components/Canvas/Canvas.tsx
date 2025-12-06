@@ -174,11 +174,13 @@ const Canvas = () => {
       const startTime = Date.now();
       const duration = 800; // Duración óptima para todo tipo de distancias
 
-      // Posiciones iniciales y finales
+      // Posiciones y escalas iniciales y finales
       const startX = stage.x();
       const startY = stage.y();
-      const targetX = window.innerWidth / 2 - center.x * stage.scaleX();
-      const targetY = window.innerHeight / 2 - center.y * stage.scaleX();
+      const startScale = stage.scaleX();
+      const targetScale = 1.5; // Zoom más cercano (ajusta este valor según prefieras)
+      const targetX = window.innerWidth / 2 - center.x * targetScale;
+      const targetY = window.innerHeight / 2 - center.y * targetScale;
 
       const anim = new Konva.Animation((frame) => {
         if (!frame) return;
@@ -186,23 +188,32 @@ const Canvas = () => {
         const elapsed = Date.now() - startTime;
         const progress = Math.min(elapsed / duration, 1);
 
-        // Easing suave sin zoom
+        // Easing suave para movimiento y zoom
         const easedProgress = easeOutSine(progress);
 
-        // Movimiento lineal puro
+        // Interpolar escala (zoom)
+        const currentScale =
+          startScale + (targetScale - startScale) * easedProgress;
+
+        // Interpolar posición
         const currentX = startX + (targetX - startX) * easedProgress;
         const currentY = startY + (targetY - startY) * easedProgress;
 
+        stage.scale({ x: currentScale, y: currentScale });
         stage.position({
           x: currentX,
           y: currentY,
         });
 
+        setScale(currentScale); // Actualizar el estado del scale
+
         if (progress === 1) {
           anim.stop();
           setShouldCenter(false);
           // Ajuste final de precisión
+          stage.scale({ x: targetScale, y: targetScale });
           stage.position({ x: targetX, y: targetY });
+          setScale(targetScale);
         }
       });
 
@@ -211,7 +222,7 @@ const Canvas = () => {
         anim.stop();
       };
     }
-  }, [shouldCenter, currentRollIndex, rollCenters]);
+  }, [shouldCenter, currentRollIndex, rollCenters, setShouldCenter]);
 
   useEffect(() => {
     if (!stageRef.current || rollCenters.length === 0) return;
@@ -221,18 +232,23 @@ const Canvas = () => {
 
     const stage = stageRef.current;
     const startTime = Date.now();
-    const duration = 3000; // Duración óptima para el efecto
-    const zoomFactor = 0.2; // Nivel máximo de zoom out
+    const duration = 2000; // Duración más lenta para suavidad
 
     // Valores iniciales
     const startScale = stage.scaleX();
     const startX = stage.x();
     const startY = stage.y();
 
-    // Objetivo final
-    const targetScale = startScale;
+    // Objetivo final con zoom predeterminado
+    const targetScale = 1.5;
     const targetX = window.innerWidth / 2 - center.x * targetScale;
     const targetY = window.innerHeight / 2 - center.y * targetScale;
+
+    // Determinar si necesitamos zoom out o podemos ir directo
+    const needsZoomOut = startScale > targetScale * 0.8; // Solo si estamos muy cerca
+    const intermediateScale = needsZoomOut
+      ? Math.min(startScale * 0.7, targetScale * 0.7)
+      : startScale;
 
     const anim = new Konva.Animation((frame) => {
       if (!frame) return;
@@ -240,28 +256,37 @@ const Canvas = () => {
       const elapsed = Date.now() - startTime;
       const rawProgress = Math.min(elapsed / duration, 1);
 
-      // Curva personalizada para sincronizar zoom y movimiento
+      // Easing suave
       const progress = easeOutSine(rawProgress);
 
-      // Interpolación de escala (zoom out-in suave)
-      const scaleProgress = Math.sin(progress * Math.PI); // Curva sinusoidal
-      const currentScale = startScale * (1 - zoomFactor * scaleProgress);
+      // Interpolación de escala más suave
+      let currentScale;
+      if (needsZoomOut && progress < 0.4) {
+        // Zoom out suave solo en la primera parte si es necesario
+        const zoomOutProgress = progress / 0.4;
+        currentScale =
+          startScale + (intermediateScale - startScale) * zoomOutProgress;
+      } else {
+        // Zoom in hacia targetScale
+        const zoomInStart = needsZoomOut ? 0.4 : 0;
+        const zoomInProgress = (progress - zoomInStart) / (1 - zoomInStart);
+        const fromScale = needsZoomOut ? intermediateScale : startScale;
+        currentScale = fromScale + (targetScale - fromScale) * zoomInProgress;
+      }
 
-      // Interpolación de posición (considerando el zoom cambiante)
-      const posProgress =
-        progress < 0.5
-          ? 2 * progress * progress // Aceleración inicial
-          : 1 - Math.pow(-2 * progress + 2, 2) / 2; // Desaceleración final
-
-      const currentX = startX + (targetX - startX) * posProgress;
-      const currentY = startY + (targetY - startY) * posProgress;
+      // Interpolación de posición suave
+      const currentX = startX + (targetX - startX) * progress;
+      const currentY = startY + (targetY - startY) * progress;
 
       stage.scale({ x: currentScale, y: currentScale });
       stage.position({ x: currentX, y: currentY });
+      setScale(currentScale);
 
       if (rawProgress === 1) {
         anim.stop();
-        stage.scale({ x: targetScale, y: targetScale }); // Asegurar escala final
+        stage.scale({ x: targetScale, y: targetScale });
+        stage.position({ x: targetX, y: targetY });
+        setScale(targetScale);
       }
     });
 
