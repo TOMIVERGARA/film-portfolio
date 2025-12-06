@@ -22,9 +22,10 @@ export function AdminLayoutClient({
             "--sidebar-width": "calc(var(--spacing) * 72)",
           } as React.CSSProperties
         }
+        className="h-svh overflow-hidden"
       >
         <AppSidebar variant="inset" />
-        <SidebarInset>
+        <SidebarInset className="overflow-y-auto">
           <SiteHeader />
           <div className="flex flex-1 flex-col mt-6">{children}</div>
         </SidebarInset>
