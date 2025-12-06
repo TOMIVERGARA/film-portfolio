@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyAuth } from '@/lib/auth';
 const cloudinary = require('cloudinary').v2;
 
 cloudinary.config({
@@ -8,6 +9,15 @@ cloudinary.config({
 });
 
 export async function POST(req: NextRequest) {
+    // Verify authentication
+    const authResult = await verifyAuth(req);
+    if (!authResult.isValid) {
+        return NextResponse.json(
+            { error: 'Unauthorized' },
+            { status: 401 }
+        );
+    }
+
     try {
         const body = await req.json();
         const publicId = body.public_id || body.publicId;

@@ -6,10 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { motion } from "framer-motion";
-
-export const metadata = {
-  title: "portfolio - login",
-};
+import { setAuthToken } from "@/lib/api-client";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -36,8 +33,8 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (data.success) {
-        // Store token in localStorage
-        localStorage.setItem("auth-token", data.token);
+        // Store token using the centralized function
+        setAuthToken(data.token);
         // Redirect to admin
         window.location.href = "/admin";
       } else {

@@ -1,10 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
-import { hashPassword, validateUsername, validateEmail, validatePassword } from '@/lib/auth';
+import { hashPassword, validateUsername, validateEmail, validatePassword, verifyAuth } from '@/lib/auth';
 import type { User } from '@/lib/db';
 
 // GET /pages/api/admin/users - Get all users
 export async function GET(req: NextRequest) {
+    // Verify authentication
+    const authResult = await verifyAuth(req);
+    if (!authResult.isValid) {
+        return NextResponse.json(
+            { error: 'Unauthorized' },
+            { status: 401 }
+        );
+    }
+
     try {
         const users = await sql`
             SELECT id, username, email, full_name, is_active, role, created_at, updated_at, last_login
@@ -24,6 +33,15 @@ export async function GET(req: NextRequest) {
 
 // POST /pages/api/admin/users - Create new user
 export async function POST(req: NextRequest) {
+    // Verify authentication
+    const authResult = await verifyAuth(req);
+    if (!authResult.isValid) {
+        return NextResponse.json(
+            { error: 'Unauthorized' },
+            { status: 401 }
+        );
+    }
+
     try {
         const { username, email, password, full_name, role = 'admin' } = await req.json();
 

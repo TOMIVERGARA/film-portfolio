@@ -1,7 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
+import { verifyAuth } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
+    // Verify authentication
+    const authResult = await verifyAuth(request);
+    if (!authResult.isValid) {
+        return NextResponse.json(
+            { error: 'Unauthorized' },
+            { status: 401 }
+        );
+    }
+
     try {
         const { username, email } = await request.json();
 

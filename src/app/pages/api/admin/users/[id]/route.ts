@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
-import { hashPassword, validatePassword } from '@/lib/auth';
+import { hashPassword, validatePassword, verifyAuth } from '@/lib/auth';
 import type { User } from '@/lib/db';
 
 // GET /pages/api/admin/users/[id] - Get user by ID
@@ -8,6 +8,15 @@ export async function GET(
     req: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
+    // Verify authentication
+    const authResult = await verifyAuth(req);
+    if (!authResult.isValid) {
+        return NextResponse.json(
+            { error: 'Unauthorized' },
+            { status: 401 }
+        );
+    }
+
     try {
         const { id } = await params;
 
@@ -40,6 +49,15 @@ export async function PATCH(
     req: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
+    // Verify authentication
+    const authResult = await verifyAuth(req);
+    if (!authResult.isValid) {
+        return NextResponse.json(
+            { error: 'Unauthorized' },
+            { status: 401 }
+        );
+    }
+
     try {
         const { id } = await params;
         const { username, email, password, full_name, is_active, role } = await req.json();
@@ -141,6 +159,15 @@ export async function DELETE(
     req: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
+    // Verify authentication
+    const authResult = await verifyAuth(req);
+    if (!authResult.isValid) {
+        return NextResponse.json(
+            { error: 'Unauthorized' },
+            { status: 401 }
+        );
+    }
+
     try {
         const { id } = await params;
 
