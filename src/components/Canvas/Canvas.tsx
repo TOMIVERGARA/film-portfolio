@@ -1,7 +1,7 @@
 "use client";
 
 import { useCanvas } from "../CanvasContext";
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { Stage, Layer, Circle } from "react-konva";
 import Photo from "./Photo";
 import Label from "./Label";
@@ -66,6 +66,84 @@ const Canvas = () => {
   const { rolls } = useCanvas();
   const [scale, setScale] = useState(1);
   const [nodes, setNodes] = useState<any[]>([]);
+
+  // Optimización: Memoizar la grilla y solo renderizar puntos visibles
+  const gridDots = useMemo(() => {
+    const dots = [];
+    const gridSpacing = 50;
+
+    // Calcular opacidad
+    const opacity = Math.min(Math.max((scale - 1.2) / 0.8, 0), 0.15);
+
+    if (opacity <= 0) return null;
+
+    const centerX = typeof window !== "undefined" ? window.innerWidth / 2 : 0;
+    const centerY = typeof window !== "undefined" ? window.innerHeight / 2 : 0;
+
+    // Optimización: Solo renderizar puntos visibles en viewport
+    const stage = stageRef.current;
+    if (!stage) {
+      // Primera renderización: área reducida
+      const visibleArea = 1500;
+      for (let x = -visibleArea; x <= visibleArea; x += gridSpacing) {
+        for (let y = -visibleArea; y <= visibleArea; y += gridSpacing) {
+          dots.push(
+            <Circle
+              key={`grid-${x}-${y}`}
+              x={centerX + x}
+              y={centerY + y}
+              radius={1.5}
+              fill="#a3a3a3"
+              opacity={opacity}
+            />
+          );
+        }
+      }
+      return dots;
+    }
+
+    // Calcular área visible basada en posición y zoom del stage
+    const stagePos = stage.position();
+    const stageScale = stage.scaleX();
+    const viewportWidth = window.innerWidth / stageScale;
+    const viewportHeight = window.innerHeight / stageScale;
+
+    // Agregar margen para suavizar transiciones
+    const margin = 500;
+    const minX =
+      Math.floor(
+        (-stagePos.x / stageScale - viewportWidth / 2 - margin) / gridSpacing
+      ) * gridSpacing;
+    const maxX =
+      Math.ceil(
+        (-stagePos.x / stageScale + viewportWidth / 2 + margin) / gridSpacing
+      ) * gridSpacing;
+    const minY =
+      Math.floor(
+        (-stagePos.y / stageScale - viewportHeight / 2 - margin) / gridSpacing
+      ) * gridSpacing;
+    const maxY =
+      Math.ceil(
+        (-stagePos.y / stageScale + viewportHeight / 2 + margin) / gridSpacing
+      ) * gridSpacing;
+
+    for (let x = minX; x <= maxX; x += gridSpacing) {
+      for (let y = minY; y <= maxY; y += gridSpacing) {
+        dots.push(
+          <Circle
+            key={`grid-${x}-${y}`}
+            x={centerX + x}
+            y={centerY + y}
+            radius={1.5}
+            fill="#a3a3a3"
+            opacity={opacity}
+          />
+        );
+      }
+    }
+
+    return dots;
+  }, [scale]);
 
   useEffect(() => {
     if (!rolls.length) return;
@@ -300,6 +378,17 @@ const Canvas = () => {
     return Math.sin((t * Math.PI) / 2);
   };
 
+  // Optimización: Throttle para setScale
+  const throttledSetScale = useRef<NodeJS.Timeout | null>(null);
+  const updateScale = useCallback((newScale: number) => {
+    if (throttledSetScale.current) {
+      clearTimeout(throttledSetScale.current);
+    }
+    throttledSetScale.current = setTimeout(() => {
+      setScale(newScale);
+    }, 16); // ~60fps
+  }, []);
+
   useEffect(() => {
     const stage = stageRef.current;
     let lastDistance = 0;
@@ -343,7 +432,8 @@ const Canvas = () => {
       };
       stage.position(newPos);
 
-      setScale(newScale);
+      // Usar throttled update
+      updateScale(newScale);
     };
 
     const handleTouchStart = (e: TouchEvent) => {
@@ -430,8 +520,11 @@ const Canvas = () => {
       container.removeEventListener("touchstart", handleTouchStart);
       container.removeEventListener("touchmove", handleTouchMove);
       container.removeEventListener("touchend", handleTouchEnd);
+      if (throttledSetScale.current) {
+        clearTimeout(throttledSetScale.current);
+      }
     };
-  }, []);
+  }, [updateScale]);
 
   return (
     <div id="konva-container">
@@ -442,6 +535,10 @@ const Canvas = () => {
         draggable
         style={{ background: "#171717", position: "fixed", zIndex: 10 }}
       >
+        {/* Capa de grilla optimizada */}
+        <Layer listening={false}>{gridDots}</Layer>
+
+        {/* Capa principal con contenido */}
         <Layer>
           {rollCenters.map((center, index) => (
             <Circle
