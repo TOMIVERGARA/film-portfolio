@@ -72,8 +72,9 @@ const Canvas = () => {
     const dots = [];
     const gridSpacing = 50;
 
-    // Calcular opacidad
-    const opacity = Math.min(Math.max((scale - 1.2) / 0.8, 0), 0.15);
+    // Calcular opacidad con transición más suave y gradual
+    // Aparece desde zoom 1.0x hasta estar completamente visible en 3.0x
+    const opacity = Math.min(Math.max((scale - 0.8) / 2.0, 0), 0.15);
 
     if (opacity <= 0) return null;
 
