@@ -72,7 +72,7 @@ const Canvas = () => {
 
     const W = window.innerWidth,
       H = window.innerHeight;
-    const R = 800,
+    const R = 1200, // Aumentado de 800 a 1200 para mayor separación entre rolls
       N = rolls.length;
 
     const centers = rolls.map((_, i) => ({
