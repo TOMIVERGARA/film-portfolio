@@ -33,21 +33,44 @@ function parseUserAgent(userAgent: string) {
 
 // Helper to get geographic data from IP (using a free service)
 async function getGeoData(ip: string) {
+    // Skip for localhost/unknown IPs
+    if (!ip || ip === "unknown" || ip === "127.0.0.1" || ip === "::1" || ip.startsWith("192.168.") || ip.startsWith("10.")) {
+        console.log("[Analytics] Skipping geo lookup for local IP:", ip);
+        return {
+            country: null,
+            countryCode: null,
+            city: null,
+            region: null,
+            timezone: null
+        };
+    }
+
     try {
-        // Using ipapi.co free tier (1000 requests/day)
-        const response = await fetch(`https://ipapi.co/${ip}/json/`);
+        // Using ip-api.com free tier (45 requests/minute, no API key needed)
+        const response = await fetch(`http://ip-api.com/json/${ip}?fields=status,message,country,countryCode,city,regionName,timezone`, {
+            signal: AbortSignal.timeout(3000) // 3 second timeout
+        });
+
         if (response.ok) {
             const data = await response.json();
-            return {
-                country: data.country_name,
-                countryCode: data.country_code,
-                city: data.city,
-                region: data.region,
-                timezone: data.timezone
-            };
+
+            if (data.status === "success") {
+                console.log("[Analytics] Geo data fetched for IP:", ip, data);
+                return {
+                    country: data.country,
+                    countryCode: data.countryCode,
+                    city: data.city,
+                    region: data.regionName,
+                    timezone: data.timezone
+                };
+            } else {
+                console.error("[Analytics] Geo API returned error:", data.message);
+            }
+        } else {
+            console.error("[Analytics] Geo API request failed:", response.status);
         }
     } catch (error) {
-        console.error("Failed to fetch geo data:", error);
+        console.error("[Analytics] Failed to fetch geo data:", error);
     }
 
     return {
@@ -79,6 +102,8 @@ export async function POST(request: NextRequest) {
         const ip = request.headers.get("x-forwarded-for")?.split(",")[0] ||
             request.headers.get("x-real-ip") ||
             "unknown";
+
+        console.log("[Analytics] Session request - IP:", ip, "SessionId:", sessionId);
 
         // Parse user agent
         const deviceInfo = parseUserAgent(userAgent);
@@ -174,23 +199,28 @@ export async function POST(request: NextRequest) {
     }
 }
 
-// PATCH: End a session
+// PATCH: End a session (legacy support)
 export async function PATCH(request: NextRequest) {
     try {
         const body = await request.json();
         const { sessionId } = body;
 
-        await sql`
+        console.log("[Analytics] Ending session (PATCH):", sessionId);
+
+        const result = await sql`
       UPDATE visitor_sessions 
       SET 
         ended_at = CURRENT_TIMESTAMP,
         duration_seconds = EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - started_at))::INTEGER
       WHERE session_id = ${sessionId} AND ended_at IS NULL
+      RETURNING duration_seconds
     `;
+
+        console.log("[Analytics] Session ended, duration:", result[0]?.duration_seconds, "seconds");
 
         return NextResponse.json({ success: true });
     } catch (error) {
-        console.error("Error ending session:", error);
+        console.error("[Analytics] Error ending session:", error);
         return NextResponse.json(
             { error: "Failed to end session" },
             { status: 500 }

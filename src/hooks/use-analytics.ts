@@ -89,44 +89,62 @@ export function useAnalytics() {
         sessionId.current = getSessionId();
         const utm = getUTMParams();
 
+        const payload = {
+            sessionId: sessionId.current,
+            screenWidth: window.innerWidth,
+            screenHeight: window.innerHeight,
+            referrer: document.referrer || undefined,
+            ...utm,
+            blockedMobile,
+        };
+
+        console.log("[Analytics] Initializing session:", payload);
+
         try {
-            await fetch("/pages/api/analytics/session", {
+            const response = await fetch("/pages/api/analytics/session", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    sessionId: sessionId.current,
-                    screenWidth: window.innerWidth,
-                    screenHeight: window.innerHeight,
-                    referrer: document.referrer || undefined,
-                    ...utm,
-                    blockedMobile,
-                }),
+                body: JSON.stringify(payload),
             });
 
-            sessionInitialized.current = true;
+            if (response.ok) {
+                const data = await response.json();
+                console.log("[Analytics] Session initialized:", data);
+                sessionInitialized.current = true;
+            } else {
+                console.error("[Analytics] Session init failed:", await response.text());
+            }
         } catch (error) {
-            console.error("Failed to initialize analytics session:", error);
+            console.error("[Analytics] Failed to initialize analytics session:", error);
         }
     }, []);
 
     // Track event
     const trackEvent = useCallback(async (event: AnalyticsEvent) => {
         if (!sessionId.current) {
-            console.warn("Session not initialized, initializing now...");
+            console.warn("[Analytics] Session not initialized, initializing now...");
             await initSession();
         }
 
+        const payload = {
+            sessionId: sessionId.current,
+            ...event,
+        };
+
+        console.log("[Analytics] Tracking event:", payload);
+
         try {
-            await fetch("/pages/api/analytics/event", {
+            const response = await fetch("/pages/api/analytics/event", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    sessionId: sessionId.current,
-                    ...event,
-                }),
+                body: JSON.stringify(payload),
             });
+
+            if (!response.ok) {
+                console.error("[Analytics] Event tracking failed:", await response.text());
+            }
         } catch (error) {
-            console.error("Failed to track event:", error);
+            console.error("[Analytics] Failed to track event:", error);
         }
     }, [initSession]);
 
@@ -166,18 +184,32 @@ export function useAnalytics() {
 
         const connectionInfo = getConnectionInfo();
 
+        // Map field names to match API expectations
+        const payload = {
+            sessionId: sessionId.current,
+            pageLoadTime: metrics.pageLoadTime,
+            canvasInitTime: metrics.canvasInitTime,
+            firstPhotoLoadTime: metrics.firstPhotoLoadTime,
+            avgPhotoLoadTime: metrics.avgPhotoLoadTime,
+            totalPhotosLoaded: metrics.totalPhotosLoaded,
+            connectionType: connectionInfo.connectionType || metrics.connectionType,
+            connectionEffectiveType: connectionInfo.connectionEffectiveType || metrics.connectionEffectiveType,
+        };
+
+        console.log("[Analytics] Tracking performance:", payload);
+
         try {
-            await fetch("/pages/api/analytics/performance", {
+            const response = await fetch("/pages/api/analytics/performance", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    sessionId: sessionId.current,
-                    ...metrics,
-                    ...connectionInfo,
-                }),
+                body: JSON.stringify(payload),
             });
+
+            if (!response.ok) {
+                console.error("[Analytics] Performance tracking failed:", await response.text());
+            }
         } catch (error) {
-            console.error("Failed to track performance:", error);
+            console.error("[Analytics] Failed to track performance:", error);
         }
     }, [initSession]);
 
@@ -240,25 +272,30 @@ export function useAnalytics() {
         const handleBeforeUnload = () => {
             const duration = Math.floor((Date.now() - pageStartTime.current) / 1000);
 
-            // Use sendBeacon for reliable tracking on page exit
-            if (navigator.sendBeacon && sessionId.current) {
-                const blob = new Blob(
-                    [JSON.stringify({ sessionId: sessionId.current })],
-                    { type: "application/json" }
-                );
-                navigator.sendBeacon("/pages/api/analytics/session", blob);
+            console.log("[Analytics] Page unload - ending session, duration:", duration, "seconds");
+
+            // Use synchronous fetch with keepalive for reliable tracking on page exit
+            if (sessionId.current) {
+                // End session
+                fetch("/pages/api/analytics/session", {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ sessionId: sessionId.current }),
+                    keepalive: true, // Ensures request completes even if page unloads
+                }).catch(err => console.error("[Analytics] Failed to end session:", err));
 
                 // Track final page view duration
-                const pageViewBlob = new Blob(
-                    [JSON.stringify({
+                fetch("/pages/api/analytics/pageview", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
                         sessionId: sessionId.current,
                         pagePath: window.location.pathname,
                         pageTitle: document.title,
                         viewDuration: duration,
-                    })],
-                    { type: "application/json" }
-                );
-                navigator.sendBeacon("/pages/api/analytics/pageview", pageViewBlob);
+                    }),
+                    keepalive: true,
+                }).catch(err => console.error("[Analytics] Failed to track final page view:", err));
             }
         };
 
