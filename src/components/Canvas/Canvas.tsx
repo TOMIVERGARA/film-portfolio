@@ -322,11 +322,11 @@ const Canvas = () => {
       let newScale;
 
       if (isTrackpad) {
-        // Para trackpad: zoom ultra suave y continuo
-        const delta = -e.deltaY / 800; // Negativo para dirección natural, más suave
+        // Para trackpad: zoom ultra suave y continuo con menor sensibilidad
+        const delta = -e.deltaY / 3000; // Reducido de 800 a 1200 para menor sensibilidad
         newScale = oldScale * (1 + delta);
       } else {
-        // Para mouse wheel: zoom más responsivo pero suave
+        // Para mouse wheel: zoom más responsivo pero suave (sin cambios)
         const scaleBy = 1.15; // Mayor factor para sentir cambios más claros
         const direction = e.deltaY > 0 ? -1 : 1; // Invertido para dirección natural
         newScale = direction > 0 ? oldScale * scaleBy : oldScale / scaleBy;
