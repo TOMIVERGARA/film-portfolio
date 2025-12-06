@@ -20,7 +20,7 @@ export default function ExportPage() {
       >
         {/* Header */}
         <div className="space-y-2">
-          <h1 className="text-4xl font-['Playfair'] font-bold lowercase text-white">
+          <h1 className="text-4xl font-bold lowercase text-white">
             exportar datos
           </h1>
           <p className="text-neutral-400 lowercase">

@@ -88,9 +88,7 @@ export default function RollsPage() {
         className="space-y-6"
       >
         <div className="mb-4">
-          <h1 className="text-3xl font-['Playfair'] font-bold lowercase text-white">
-            rolls
-          </h1>
+          <h1 className="text-3xl font-bold lowercase text-white">rolls</h1>
           <p className="text-sm text-neutral-400 lowercase">
             rolls disponibles en el portfolio.
           </p>

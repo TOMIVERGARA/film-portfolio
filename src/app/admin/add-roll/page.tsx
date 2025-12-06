@@ -280,7 +280,7 @@ export default function AddRollPage() {
         {/* Form (not enclosed in a card per request) */}
         <div className="p-0">
           <div className="mb-4">
-            <h2 className="text-2xl font-['Playfair'] font-bold mb-2 lowercase text-white">
+            <h2 className="text-2xl font-bold mb-2 lowercase text-white">
               crear nuevo roll
             </h2>
             <p className="text-sm text-neutral-400 lowercase">

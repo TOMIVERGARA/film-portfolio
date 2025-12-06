@@ -540,11 +540,11 @@ export default function RollDetailPage() {
                     }
                   }}
                   onBlur={() => setEditingField(null)}
-                  className="bg-transparent border-b border-neutral-700 text-2xl font-['Playfair'] font-bold lowercase text-white outline-none p-1"
+                  className="bg-transparent border-b border-neutral-700 text-2xl font-bold lowercase text-white outline-none p-1"
                 />
               ) : (
                 <h2
-                  className="text-2xl font-['Playfair'] font-bold lowercase text-white"
+                  className="text-2xl font-bold lowercase text-white"
                   onDoubleClick={() => {
                     setEditingField("name");
                     setFieldDraft(roll.metadata?.name || "");

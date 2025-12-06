@@ -15,7 +15,7 @@ export default function AdminHomePage() {
       >
         {/* Header */}
         <div className="space-y-2">
-          <h1 className="text-4xl font-['Playfair'] font-bold lowercase text-white">
+          <h1 className="text-4xl font-bold lowercase text-white">
             panel de administración
           </h1>
           <p className="text-neutral-400 lowercase">
@@ -73,7 +73,7 @@ export default function AdminHomePage() {
 
         {/* Quick Actions */}
         <div className="space-y-4">
-          <h2 className="text-2xl font-['Playfair'] font-bold lowercase text-white">
+          <h2 className="text-2xl font-bold lowercase text-white">
             acciones rápidas
           </h2>
 
@@ -128,7 +128,7 @@ export default function AdminHomePage() {
 
         {/* Recent Activity */}
         <div className="space-y-4">
-          <h2 className="text-2xl font-['Playfair'] font-bold lowercase text-white">
+          <h2 className="text-2xl font-bold lowercase text-white">
             actividad reciente
           </h2>
           <div className="bg-neutral-950/40 backdrop-blur-lg p-8 border border-neutral-800">
