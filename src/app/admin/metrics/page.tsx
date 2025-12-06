@@ -1,9 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Zap } from "lucide-react";
+import { Zap, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { authenticatedFetchJSON } from "@/lib/api-client";
+import { authenticatedFetchJSON, authenticatedDelete } from "@/lib/api-client";
 import { StatsCards } from "./components/StatsCards";
 import { SessionsChart } from "./components/SessionsChart";
 import { PerformanceChart } from "./components/PerformanceChart";
@@ -11,6 +11,17 @@ import { DevicesChart } from "./components/DevicesChart";
 import { BrowsersChart } from "./components/BrowsersChart";
 import { GeoMap } from "./components/GeoMap";
 import { EventsChart } from "./components/EventsChart";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { showSuccess, showError } from "@/components/ui/notify";
 
 interface AnalyticsStats {
   overview: {
@@ -64,6 +75,9 @@ export default function MetricsPage() {
   const [period, setPeriod] = useState<"7days" | "30days" | "90days" | "all">(
     "7days"
   );
+  const [clearDialogOpen, setClearDialogOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+  const [isClearing, setIsClearing] = useState(false);
 
   useEffect(() => {
     fetchStats();
@@ -80,6 +94,30 @@ export default function MetricsPage() {
       console.error("Error fetching stats:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleClearMetrics = async () => {
+    if (confirmText.toLowerCase() !== "eliminar") {
+      showError("Por favor escribe 'eliminar' para confirmar");
+      return;
+    }
+
+    setIsClearing(true);
+    try {
+      await authenticatedDelete("/pages/api/analytics/clear");
+
+      showSuccess("Todas las métricas han sido eliminadas");
+      setClearDialogOpen(false);
+      setConfirmText("");
+
+      // Refresh stats
+      await fetchStats();
+    } catch (error) {
+      console.error("Error clearing metrics:", error);
+      showError("Error al eliminar las métricas");
+    } finally {
+      setIsClearing(false);
     }
   };
 
@@ -106,7 +144,7 @@ export default function MetricsPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto mb-10">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -124,8 +162,8 @@ export default function MetricsPage() {
             </p>
           </div>
 
-          {/* Period Selector */}
           <div className="flex gap-2">
+            {/* Period Selector */}
             {(["7days", "30days", "90days", "all"] as const).map((p) => (
               <button
                 key={p}
@@ -145,6 +183,13 @@ export default function MetricsPage() {
                   : "todo"}
               </button>
             ))}
+            {/* Clear Metrics Button */}
+            <button
+              onClick={() => setClearDialogOpen(true)}
+              className="px-4 py-2 text-sm lowercase transition-colors bg-red-900/20 text-red-400 hover:bg-red-900/30 border border-red-900/50 flex items-center gap-2"
+            >
+              <Trash2 size={16} />
+            </button>
           </div>
         </div>
 
@@ -279,6 +324,94 @@ export default function MetricsPage() {
           </div>
         </motion.div>
       </motion.div>
+
+      {/* Clear Metrics Dialog */}
+      <Dialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>
+        <DialogContent className="bg-neutral-950 border border-red-900 rounded-none">
+          <DialogHeader>
+            <DialogTitle className="text-red-400 lowercase">
+              eliminar todas las métricas
+            </DialogTitle>
+            <DialogDescription className="text-neutral-400 lowercase">
+              <span className="font-bold text-red-400">atención:</span> estás a
+              punto de eliminar{" "}
+              <span className="font-bold">todas las métricas de analytics</span>
+              .
+              <br />
+              <br />
+              esta acción es{" "}
+              <span className="text-red-400 font-bold">irreversible</span> y
+              eliminará permanentemente:
+              <ul className="mt-2 space-y-1">
+                <li>- todas las sesiones de visitantes</li>
+                <li>- todas las vistas de páginas</li>
+                <li>- todos los eventos registrados</li>
+                <li>- todas las métricas de performance</li>
+              </ul>
+              <br />
+              escribe <span className="text-red-400 font-bold">
+                eliminar
+              </span>{" "}
+              para confirmar:
+            </DialogDescription>
+          </DialogHeader>
+
+          <Input
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            placeholder="escribe 'eliminar'"
+            className="bg-transparent border-red-900 text-white lowercase rounded-none"
+            autoFocus
+          />
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setClearDialogOpen(false);
+                setConfirmText("");
+              }}
+              className="rounded-none border border-neutral-700"
+              disabled={isClearing}
+            >
+              cancelar
+            </Button>
+            <Button
+              onClick={handleClearMetrics}
+              className="rounded-none bg-red-900 hover:bg-red-800 text-white"
+              disabled={isClearing || confirmText.toLowerCase() !== "eliminar"}
+            >
+              {isClearing ? (
+                <>
+                  <svg
+                    className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                    ></path>
+                  </svg>
+                  eliminando métricas...
+                </>
+              ) : (
+                "eliminar todas las métricas"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
