@@ -316,28 +316,24 @@ const Canvas = () => {
         y: (pointer.y - stage.y()) / oldScale,
       };
 
-      // Detectar si es trackpad o mouse
-      // Los trackpads suelen enviar valores decimales y más pequeños
+      // Detectar si es trackpad o mouse basado en deltaY
       const isTrackpad = Math.abs(e.deltaY) < 50 && e.deltaY % 1 !== 0;
 
       let newScale;
 
       if (isTrackpad) {
-        // Para trackpad: zoom suave y continuo
-        // Usar un factor mucho más pequeño para que sea realmente suave
-        const delta = e.deltaY / 1000; // Ajustado para mayor sensibilidad pero suave
+        // Para trackpad: zoom ultra suave y continuo
+        const delta = -e.deltaY / 800; // Negativo para dirección natural, más suave
         newScale = oldScale * (1 + delta);
-
-        // Sin límites por frame para permitir movimiento fluido
       } else {
-        // Para mouse: zoom discreto tradicional
-        const scaleBy = 1.08;
-        const direction = e.deltaY > 0 ? 1 : -1;
-        newScale = direction > 0 ? oldScale / scaleBy : oldScale * scaleBy;
+        // Para mouse wheel: zoom más responsivo pero suave
+        const scaleBy = 1.15; // Mayor factor para sentir cambios más claros
+        const direction = e.deltaY > 0 ? -1 : 1; // Invertido para dirección natural
+        newScale = direction > 0 ? oldScale * scaleBy : oldScale / scaleBy;
       }
 
-      // Limitar escala global
-      newScale = Math.max(0.1, Math.min(5, newScale));
+      // Sin límite máximo de zoom, solo mínimo
+      newScale = Math.max(0.05, newScale); // Permite zoom out hasta 0.05x y zoom in ilimitado
 
       stage.scale({ x: newScale, y: newScale });
 
@@ -346,7 +342,6 @@ const Canvas = () => {
         y: pointer.y - mousePointTo.y * newScale,
       };
       stage.position(newPos);
-      stage.batchDraw();
 
       setScale(newScale);
     };
