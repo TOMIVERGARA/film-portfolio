@@ -150,3 +150,104 @@ export function validateEmail(email: string): {
 
     return { valid: true };
 }
+
+/**
+ * Verify authentication from request (for API routes)
+ * This function:
+ * 1. Extracts and validates the JWT token
+ * 2. Verifies the session exists and is active in the database
+ * 3. Checks that the session hasn't expired
+ */
+export async function verifyAuth(request: Request): Promise<{
+    isValid: boolean;
+    user?: JWTPayload;
+    error?: string;
+}> {
+    try {
+        const authHeader = request.headers.get('Authorization');
+        const token = extractTokenFromHeader(authHeader);
+
+        if (!token) {
+            return { isValid: false, error: 'No token provided' };
+        }
+
+        const decoded = verifyToken(token);
+
+        if (!decoded) {
+            return { isValid: false, error: 'Invalid or expired token' };
+        }
+
+        // Verify session exists and is active in database
+        const { sql } = await import('./db');
+        const sessions = await sql`
+            SELECT 
+                us.id,
+                us.expires_at,
+                u.is_active as user_is_active
+            FROM user_sessions us
+            JOIN users u ON u.id = us.user_id
+            WHERE us.token_jti = ${decoded.jti}
+            AND us.user_id = ${decoded.userId}
+            LIMIT 1
+        `;
+
+        if (sessions.length === 0) {
+            return { isValid: false, error: 'Session not found' };
+        }
+
+        const session = sessions[0];
+
+        // Check if session has expired
+        const now = new Date();
+        const expiresAt = new Date(session.expires_at);
+        if (now > expiresAt) {
+            return { isValid: false, error: 'Session expired' };
+        }
+
+        // Check if user account is still active
+        if (!session.user_is_active) {
+            return { isValid: false, error: 'User account is inactive' };
+        }
+
+        return { isValid: true, user: decoded };
+    } catch (error) {
+        console.error('Authentication verification failed:', error);
+        return { isValid: false, error: 'Authentication failed' };
+    }
+}
+
+/**
+ * Revoke a session (for logout)
+ */
+export async function revokeSession(jti: string): Promise<boolean> {
+    try {
+        const { sql } = await import('./db');
+        await sql`
+            DELETE FROM user_sessions
+            WHERE token_jti = ${jti}
+        `;
+        return true;
+    } catch (error) {
+        console.error('Failed to revoke session:', error);
+        return false;
+    }
+}
+
+/**
+ * Clean up expired sessions
+ */
+export async function cleanExpiredSessions(): Promise<number> {
+    try {
+        const { sql } = await import('./db');
+        const result = await sql`
+            DELETE FROM user_sessions
+            WHERE expires_at < NOW()
+            RETURNING id
+        `;
+        return result.length;
+    } catch (error) {
+        console.error('Failed to clean expired sessions:', error);
+        return 0;
+    }
+}
+

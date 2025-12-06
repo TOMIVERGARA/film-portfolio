@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { isAuthenticated } from "@/lib/api-client";
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -10,18 +11,15 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Check if we're on an admin route
     if (pathname?.startsWith("/admin")) {
-      const token = localStorage.getItem("auth-token");
-
       // If no token, redirect to login
-      if (!token) {
+      if (!isAuthenticated()) {
         router.push("/login");
       }
     }
 
     // If on login page with valid token, redirect to admin
     if (pathname === "/login") {
-      const token = localStorage.getItem("auth-token");
-      if (token) {
+      if (isAuthenticated()) {
         router.push("/admin");
       }
     }
