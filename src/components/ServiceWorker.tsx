@@ -4,7 +4,8 @@ import { useEffect } from "react";
 
 export const ServiceWorker = () => {
   useEffect(() => {
-    if ("serviceWorker" in navigator) {
+    // Solo registrar el SW en producción
+    if (process.env.NODE_ENV === "production" && "serviceWorker" in navigator) {
       navigator.serviceWorker
         .register("/sw.js")
         .then((registration) => {
@@ -13,6 +14,8 @@ export const ServiceWorker = () => {
         .catch((err) => {
           console.error("Error registrando ServiceWorker:", err);
         });
+    } else {
+      console.log("ServiceWorker deshabilitado en modo desarrollo");
     }
   }, []);
 

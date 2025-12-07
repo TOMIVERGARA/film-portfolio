@@ -1,27 +1,42 @@
 "use client";
 
 import "./globals.css";
-import { BottomBar } from "@/components/BottomBar";
 import { CanvasProvider, useCanvas } from "@/components/CanvasContext";
+import { AnalyticsProvider } from "@/components/AnalyticsProvider";
 import { AnimatePresence, motion } from "framer-motion";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { ServiceWorker } from "@/components/ServiceWorker";
+import { usePathname } from "next/navigation";
+import { Toaster } from "@/components/ui/sonner";
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const pathname = usePathname();
+  const isAdminRoute = pathname?.startsWith("/admin") || pathname === "/login";
+
   return (
     <html lang="en">
       <body>
-        <CanvasProvider>
-          <PreloadWrapper>
-            {children}
-            <BottomBar />
-          </PreloadWrapper>
-          <ServiceWorker />
-        </CanvasProvider>
+        {/* Sonner Toaster (shadcn wrapper) - disponible globalmente */}
+        {/* Uses components/ui/sonner.tsx added by shadcn */}
+        {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment */}
+        {/* @ts-ignore-next-line */}
+        <Toaster />
+        {isAdminRoute ? (
+          // Admin routes and login: no CanvasProvider, no loading screen, no analytics
+          <>{children}</>
+        ) : (
+          // Public routes: with CanvasProvider, loading screen, and analytics
+          <AnalyticsProvider>
+            <CanvasProvider>
+              <PreloadWrapper>{children}</PreloadWrapper>
+              <ServiceWorker />
+            </CanvasProvider>
+          </AnalyticsProvider>
+        )}
       </body>
     </html>
   );

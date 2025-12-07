@@ -1,7 +1,7 @@
 "use client";
 
 import { useCanvas } from "../CanvasContext";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { Stage, Layer, Circle } from "react-konva";
 import Photo from "./Photo";
 import Label from "./Label";
@@ -14,6 +14,7 @@ import {
 } from "d3-force";
 import Konva from "konva";
 import { Roll, GraphNode } from "@/types";
+import { useAnalyticsContext } from "../AnalyticsProvider";
 
 function generateLinks(nodes: GraphNode[]) {
   const links = [];
@@ -66,12 +67,91 @@ const Canvas = () => {
   const [scale, setScale] = useState(1);
   const [nodes, setNodes] = useState<any[]>([]);
 
+  // Optimización: Memoizar la grilla y solo renderizar puntos visibles
+  const gridDots = useMemo(() => {
+    const dots = [];
+    const gridSpacing = 50;
+
+    // Calcular opacidad con transición más suave y gradual
+    // Aparece desde zoom 1.0x hasta estar completamente visible en 3.0x
+    const opacity = Math.min(Math.max((scale - 0.8) / 2.0, 0), 0.15);
+
+    if (opacity <= 0) return null;
+
+    const centerX = typeof window !== "undefined" ? window.innerWidth / 2 : 0;
+    const centerY = typeof window !== "undefined" ? window.innerHeight / 2 : 0;
+
+    // Optimización: Solo renderizar puntos visibles en viewport
+    const stage = stageRef.current;
+    if (!stage) {
+      // Primera renderización: área reducida
+      const visibleArea = 1500;
+      for (let x = -visibleArea; x <= visibleArea; x += gridSpacing) {
+        for (let y = -visibleArea; y <= visibleArea; y += gridSpacing) {
+          dots.push(
+            <Circle
+              key={`grid-${x}-${y}`}
+              x={centerX + x}
+              y={centerY + y}
+              radius={1.5}
+              fill="#a3a3a3"
+              opacity={opacity}
+            />
+          );
+        }
+      }
+      return dots;
+    }
+
+    // Calcular área visible basada en posición y zoom del stage
+    const stagePos = stage.position();
+    const stageScale = stage.scaleX();
+    const viewportWidth = window.innerWidth / stageScale;
+    const viewportHeight = window.innerHeight / stageScale;
+
+    // Agregar margen para suavizar transiciones
+    const margin = 500;
+    const minX =
+      Math.floor(
+        (-stagePos.x / stageScale - viewportWidth / 2 - margin) / gridSpacing
+      ) * gridSpacing;
+    const maxX =
+      Math.ceil(
+        (-stagePos.x / stageScale + viewportWidth / 2 + margin) / gridSpacing
+      ) * gridSpacing;
+    const minY =
+      Math.floor(
+        (-stagePos.y / stageScale - viewportHeight / 2 - margin) / gridSpacing
+      ) * gridSpacing;
+    const maxY =
+      Math.ceil(
+        (-stagePos.y / stageScale + viewportHeight / 2 + margin) / gridSpacing
+      ) * gridSpacing;
+
+    for (let x = minX; x <= maxX; x += gridSpacing) {
+      for (let y = minY; y <= maxY; y += gridSpacing) {
+        dots.push(
+          <Circle
+            key={`grid-${x}-${y}`}
+            x={centerX + x}
+            y={centerY + y}
+            radius={1.5}
+            fill="#a3a3a3"
+            opacity={opacity}
+          />
+        );
+      }
+    }
+
+    return dots;
+  }, [scale]);
+
   useEffect(() => {
     if (!rolls.length) return;
 
     const W = window.innerWidth,
       H = window.innerHeight;
-    const R = 800,
+    const R = 1200, // Aumentado de 800 a 1200 para mayor separación entre rolls
       N = rolls.length;
 
     const centers = rolls.map((_, i) => ({
@@ -173,11 +253,13 @@ const Canvas = () => {
       const startTime = Date.now();
       const duration = 800; // Duración óptima para todo tipo de distancias
 
-      // Posiciones iniciales y finales
+      // Posiciones y escalas iniciales y finales
       const startX = stage.x();
       const startY = stage.y();
-      const targetX = window.innerWidth / 2 - center.x * stage.scaleX();
-      const targetY = window.innerHeight / 2 - center.y * stage.scaleX();
+      const startScale = stage.scaleX();
+      const targetScale = 1.5; // Zoom más cercano (ajusta este valor según prefieras)
+      const targetX = window.innerWidth / 2 - center.x * targetScale;
+      const targetY = window.innerHeight / 2 - center.y * targetScale;
 
       const anim = new Konva.Animation((frame) => {
         if (!frame) return;
@@ -185,23 +267,32 @@ const Canvas = () => {
         const elapsed = Date.now() - startTime;
         const progress = Math.min(elapsed / duration, 1);
 
-        // Easing suave sin zoom
+        // Easing suave para movimiento y zoom
         const easedProgress = easeOutSine(progress);
 
-        // Movimiento lineal puro
+        // Interpolar escala (zoom)
+        const currentScale =
+          startScale + (targetScale - startScale) * easedProgress;
+
+        // Interpolar posición
         const currentX = startX + (targetX - startX) * easedProgress;
         const currentY = startY + (targetY - startY) * easedProgress;
 
+        stage.scale({ x: currentScale, y: currentScale });
         stage.position({
           x: currentX,
           y: currentY,
         });
 
+        setScale(currentScale); // Actualizar el estado del scale
+
         if (progress === 1) {
           anim.stop();
           setShouldCenter(false);
           // Ajuste final de precisión
+          stage.scale({ x: targetScale, y: targetScale });
           stage.position({ x: targetX, y: targetY });
+          setScale(targetScale);
         }
       });
 
@@ -210,7 +301,7 @@ const Canvas = () => {
         anim.stop();
       };
     }
-  }, [shouldCenter, currentRollIndex, rollCenters]);
+  }, [shouldCenter, currentRollIndex, rollCenters, setShouldCenter]);
 
   useEffect(() => {
     if (!stageRef.current || rollCenters.length === 0) return;
@@ -220,18 +311,23 @@ const Canvas = () => {
 
     const stage = stageRef.current;
     const startTime = Date.now();
-    const duration = 3000; // Duración óptima para el efecto
-    const zoomFactor = 0.2; // Nivel máximo de zoom out
+    const duration = 2000; // Duración más lenta para suavidad
 
     // Valores iniciales
     const startScale = stage.scaleX();
     const startX = stage.x();
     const startY = stage.y();
 
-    // Objetivo final
-    const targetScale = startScale;
+    // Objetivo final con zoom predeterminado
+    const targetScale = 1.5;
     const targetX = window.innerWidth / 2 - center.x * targetScale;
     const targetY = window.innerHeight / 2 - center.y * targetScale;
+
+    // Determinar si necesitamos zoom out o podemos ir directo
+    const needsZoomOut = startScale > targetScale * 0.8; // Solo si estamos muy cerca
+    const intermediateScale = needsZoomOut
+      ? Math.min(startScale * 0.7, targetScale * 0.7)
+      : startScale;
 
     const anim = new Konva.Animation((frame) => {
       if (!frame) return;
@@ -239,28 +335,37 @@ const Canvas = () => {
       const elapsed = Date.now() - startTime;
       const rawProgress = Math.min(elapsed / duration, 1);
 
-      // Curva personalizada para sincronizar zoom y movimiento
+      // Easing suave
       const progress = easeOutSine(rawProgress);
 
-      // Interpolación de escala (zoom out-in suave)
-      const scaleProgress = Math.sin(progress * Math.PI); // Curva sinusoidal
-      const currentScale = startScale * (1 - zoomFactor * scaleProgress);
+      // Interpolación de escala más suave
+      let currentScale;
+      if (needsZoomOut && progress < 0.4) {
+        // Zoom out suave solo en la primera parte si es necesario
+        const zoomOutProgress = progress / 0.4;
+        currentScale =
+          startScale + (intermediateScale - startScale) * zoomOutProgress;
+      } else {
+        // Zoom in hacia targetScale
+        const zoomInStart = needsZoomOut ? 0.4 : 0;
+        const zoomInProgress = (progress - zoomInStart) / (1 - zoomInStart);
+        const fromScale = needsZoomOut ? intermediateScale : startScale;
+        currentScale = fromScale + (targetScale - fromScale) * zoomInProgress;
+      }
 
-      // Interpolación de posición (considerando el zoom cambiante)
-      const posProgress =
-        progress < 0.5
-          ? 2 * progress * progress // Aceleración inicial
-          : 1 - Math.pow(-2 * progress + 2, 2) / 2; // Desaceleración final
-
-      const currentX = startX + (targetX - startX) * posProgress;
-      const currentY = startY + (targetY - startY) * posProgress;
+      // Interpolación de posición suave
+      const currentX = startX + (targetX - startX) * progress;
+      const currentY = startY + (targetY - startY) * progress;
 
       stage.scale({ x: currentScale, y: currentScale });
       stage.position({ x: currentX, y: currentY });
+      setScale(currentScale);
 
       if (rawProgress === 1) {
         anim.stop();
-        stage.scale({ x: targetScale, y: targetScale }); // Asegurar escala final
+        stage.scale({ x: targetScale, y: targetScale });
+        stage.position({ x: targetX, y: targetY });
+        setScale(targetScale);
       }
     });
 
@@ -274,12 +379,42 @@ const Canvas = () => {
     return Math.sin((t * Math.PI) / 2);
   };
 
+  // Optimización: Throttle para setScale
+  const throttledSetScale = useRef<NodeJS.Timeout | null>(null);
+  const updateScale = useCallback((newScale: number) => {
+    if (throttledSetScale.current) {
+      clearTimeout(throttledSetScale.current);
+    }
+    throttledSetScale.current = setTimeout(() => {
+      setScale(newScale);
+    }, 16); // ~60fps
+  }, []);
+
   useEffect(() => {
     const stage = stageRef.current;
+    let lastDistance = 0;
+    let isPinching = false;
+    let storedDraggable = stage.draggable();
+    let anchorTouch: { id: number; x: number; y: number } | null = null;
+    let initialTouches: { id: number; x: number; y: number }[] = [];
+
+    const getTouchPoint = (touch: Touch) => {
+      const containerRect = stage.container().getBoundingClientRect();
+      return {
+        id: touch.identifier,
+        x: touch.clientX - containerRect.left,
+        y: touch.clientY - containerRect.top,
+      };
+    };
+
+    const toStageCoords = (point: { x: number; y: number }) => {
+      const transform = stage.getAbsoluteTransform().copy();
+      transform.invert();
+      return transform.point(point);
+    };
 
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
-      const scaleBy = 1.05;
 
       const oldScale = stage.scaleX();
       const pointer = stage.getPointerPosition();
@@ -289,8 +424,24 @@ const Canvas = () => {
         y: (pointer.y - stage.y()) / oldScale,
       };
 
-      const direction = e.deltaY > 0 ? 1 : -1;
-      const newScale = direction > 0 ? oldScale * scaleBy : oldScale / scaleBy;
+      // Detectar si es trackpad o mouse basado en deltaY
+      const isTrackpad = Math.abs(e.deltaY) < 50 && e.deltaY % 1 !== 0;
+
+      let newScale;
+
+      if (isTrackpad) {
+        // Para trackpad: zoom ultra suave y continuo con menor sensibilidad
+        const delta = -e.deltaY / 3000; // Reducido de 800 a 1200 para menor sensibilidad
+        newScale = oldScale * (1 + delta);
+      } else {
+        // Para mouse wheel: zoom más responsivo pero suave (sin cambios)
+        const scaleBy = 1.15; // Mayor factor para sentir cambios más claros
+        const direction = e.deltaY > 0 ? -1 : 1; // Invertido para dirección natural
+        newScale = direction > 0 ? oldScale * scaleBy : oldScale / scaleBy;
+      }
+
+      // Sin límite máximo de zoom, solo mínimo
+      newScale = Math.max(0.05, newScale); // Permite zoom out hasta 0.05x y zoom in ilimitado
 
       stage.scale({ x: newScale, y: newScale });
 
@@ -299,36 +450,127 @@ const Canvas = () => {
         y: pointer.y - mousePointTo.y * newScale,
       };
       stage.position(newPos);
+
+      // Usar throttled update
+      updateScale(newScale);
+    };
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        if (!isPinching) {
+          storedDraggable = stage.draggable();
+          stage.stopDrag();
+          stage.draggable(false);
+        }
+        isPinching = true;
+        
+        // Guardar las posiciones iniciales de ambos dedos
+        const touch1 = getTouchPoint(e.touches[0]);
+        const touch2 = getTouchPoint(e.touches[1]);
+        initialTouches = [touch1, touch2];
+        
+        // El primer dedo (touches[0]) será el ancla por defecto
+        anchorTouch = touch1;
+        
+        lastDistance = Math.hypot(
+          touch2.x - touch1.x,
+          touch2.y - touch1.y
+        );
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isPinching || e.touches.length !== 2) return;
+
+      e.preventDefault();
+
+      const touch1 = getTouchPoint(e.touches[0]);
+      const touch2 = getTouchPoint(e.touches[1]);
+      
+      // Determinar cuál dedo se ha movido menos (el ancla)
+      if (initialTouches.length === 2) {
+        const movement1 = Math.hypot(
+          touch1.x - initialTouches[0].x,
+          touch1.y - initialTouches[0].y
+        );
+        const movement2 = Math.hypot(
+          touch2.x - initialTouches[1].x,
+          touch2.y - initialTouches[1].y
+        );
+        
+        // Actualizar el ancla al dedo que se ha movido menos
+        anchorTouch = movement1 < movement2 ? touch1 : touch2;
+      }
+
+      const currentDistance = Math.hypot(
+        touch2.x - touch1.x,
+        touch2.y - touch1.y
+      );
+
+      if (lastDistance === 0) {
+        lastDistance = currentDistance;
+        return;
+      }
+
+      const oldScale = stage.scaleX();
+      
+      // Usar el dedo ancla como punto pivote
+      const pivot = anchorTouch || touch1;
+      const scaleDelta = currentDistance / lastDistance;
+      const safeDelta = Number.isFinite(scaleDelta) ? scaleDelta : 1;
+      const clampedDelta = Math.max(0.9, Math.min(1.1, safeDelta));
+      let newScale = oldScale * clampedDelta;
+      newScale = Math.max(0.1, Math.min(5, newScale));
+
+      // Convertir el punto pivote a coordenadas del stage
+      const stagePoint = toStageCoords(pivot);
+      
+      // Aplicar nueva escala
+      stage.scale({ x: newScale, y: newScale });
+      
+      // Ajustar posición para mantener el ancla en su lugar
+      const newPos = {
+        x: pivot.x - stagePoint.x * newScale,
+        y: pivot.y - stagePoint.y * newScale,
+      };
+      stage.position(newPos);
       stage.batchDraw();
 
-      setScale(newScale);
+      updateScale(newScale);
+      lastDistance = currentDistance;
     };
 
-    stage.container().addEventListener("wheel", handleWheel);
-
-    return () => {
-      stage.container().removeEventListener("wheel", handleWheel);
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length < 2) {
+        isPinching = false;
+        lastDistance = 0;
+        anchorTouch = null;
+        initialTouches = [];
+        stage.stopDrag();
+        stage.draggable(storedDraggable);
+      }
     };
-  }, []);
 
-  useEffect(() => {
-    const container = document.getElementById("konva-container");
-    if (!container) return;
-
-    const preventDefault = (e: TouchEvent) => e.preventDefault();
-
-    container.addEventListener("touchstart", preventDefault, {
+    const container = stage.container();
+    container.addEventListener("wheel", handleWheel);
+    container.addEventListener("touchstart", handleTouchStart, {
       passive: false,
     });
-    container.addEventListener("touchmove", preventDefault, {
+    container.addEventListener("touchmove", handleTouchMove, {
       passive: false,
     });
+    container.addEventListener("touchend", handleTouchEnd);
 
     return () => {
-      container.removeEventListener("touchstart", preventDefault);
-      container.removeEventListener("touchmove", preventDefault);
+      container.removeEventListener("wheel", handleWheel);
+      container.removeEventListener("touchstart", handleTouchStart);
+      container.removeEventListener("touchmove", handleTouchMove);
+      container.removeEventListener("touchend", handleTouchEnd);
+      if (throttledSetScale.current) {
+        clearTimeout(throttledSetScale.current);
+      }
     };
-  }, []);
+  }, [updateScale]);
 
   return (
     <div id="konva-container">
@@ -339,6 +581,10 @@ const Canvas = () => {
         draggable
         style={{ background: "#171717", position: "fixed", zIndex: 10 }}
       >
+        {/* Capa de grilla optimizada */}
+        <Layer listening={false}>{gridDots}</Layer>
+
+        {/* Capa principal con contenido */}
         <Layer>
           {rollCenters.map((center, index) => (
             <Circle

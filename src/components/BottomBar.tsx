@@ -79,7 +79,7 @@ export function BottomBar() {
                 <Button
                   size="icon"
                   asChild
-                  className="hover:bg-neutral-600/20 bg-black/0 rounded-none relative" // Añade 'relative' aquí
+                  className="hover:bg-neutral-600/20 bg-black/0 rounded-none relative border-none" // Añade 'relative' aquí
                   onClick={() => handleAboutClick()}
                 >
                   <Link href="/">
@@ -116,7 +116,7 @@ export function BottomBar() {
                       <Button
                         size="icon"
                         asChild
-                        className="hover:bg-neutral-600/20 bg-black/0 rounded-none"
+                        className="hover:bg-neutral-600/20 bg-black/0 rounded-none border-none"
                         onClick={handleMoveBackward}
                       >
                         <Link href="/">
@@ -133,7 +133,7 @@ export function BottomBar() {
                       <Button
                         size="icon"
                         asChild
-                        className="hover:bg-neutral-600/20 bg-black/0 hover:animate-pulse rounded-none"
+                        className="hover:bg-neutral-600/20 bg-black/0 hover:animate-pulse rounded-none border-none"
                         onClick={handleCenter}
                       >
                         <Link href="/">
@@ -150,7 +150,7 @@ export function BottomBar() {
                       <Button
                         size="icon"
                         asChild
-                        className="hover:bg-neutral-600/20 bg-black/0 rounded-none"
+                        className="hover:bg-neutral-600/20 bg-black/0 rounded-none border-none"
                         onClick={handleMoveForward}
                       >
                         <Link href="/">
@@ -178,7 +178,7 @@ export function BottomBar() {
             <HoverCardTrigger asChild>
               <Button
                 size="icon"
-                className="hover:bg-neutral-600/20 bg-black/0  rounded-none"
+                className="hover:bg-neutral-600/20 bg-black/0  rounded-none border-none"
                 asChild
               >
                 <Link href="/">
