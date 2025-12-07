@@ -19,6 +19,9 @@ export default function RootLayout({
 
   return (
     <html lang="en">
+      <head>
+        <title>tv - portfolio</title>
+      </head>
       <body>
         {/* Sonner Toaster (shadcn wrapper) - disponible globalmente */}
         {/* Uses components/ui/sonner.tsx added by shadcn */}
