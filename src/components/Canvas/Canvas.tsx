@@ -394,6 +394,24 @@ const Canvas = () => {
     const stage = stageRef.current;
     let lastDistance = 0;
     let isPinching = false;
+    let storedDraggable = stage.draggable();
+    let anchorTouch: { id: number; x: number; y: number } | null = null;
+    let initialTouches: { id: number; x: number; y: number }[] = [];
+
+    const getTouchPoint = (touch: Touch) => {
+      const containerRect = stage.container().getBoundingClientRect();
+      return {
+        id: touch.identifier,
+        x: touch.clientX - containerRect.left,
+        y: touch.clientY - containerRect.top,
+      };
+    };
+
+    const toStageCoords = (point: { x: number; y: number }) => {
+      const transform = stage.getAbsoluteTransform().copy();
+      transform.invert();
+      return transform.point(point);
+    };
 
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
@@ -439,12 +457,24 @@ const Canvas = () => {
 
     const handleTouchStart = (e: TouchEvent) => {
       if (e.touches.length === 2) {
+        if (!isPinching) {
+          storedDraggable = stage.draggable();
+          stage.stopDrag();
+          stage.draggable(false);
+        }
         isPinching = true;
-        const touch1 = e.touches[0];
-        const touch2 = e.touches[1];
+        
+        // Guardar las posiciones iniciales de ambos dedos
+        const touch1 = getTouchPoint(e.touches[0]);
+        const touch2 = getTouchPoint(e.touches[1]);
+        initialTouches = [touch1, touch2];
+        
+        // El primer dedo (touches[0]) será el ancla por defecto
+        anchorTouch = touch1;
+        
         lastDistance = Math.hypot(
-          touch2.clientX - touch1.clientX,
-          touch2.clientY - touch1.clientY
+          touch2.x - touch1.x,
+          touch2.y - touch1.y
         );
       }
     };
@@ -454,11 +484,27 @@ const Canvas = () => {
 
       e.preventDefault();
 
-      const touch1 = e.touches[0];
-      const touch2 = e.touches[1];
+      const touch1 = getTouchPoint(e.touches[0]);
+      const touch2 = getTouchPoint(e.touches[1]);
+      
+      // Determinar cuál dedo se ha movido menos (el ancla)
+      if (initialTouches.length === 2) {
+        const movement1 = Math.hypot(
+          touch1.x - initialTouches[0].x,
+          touch1.y - initialTouches[0].y
+        );
+        const movement2 = Math.hypot(
+          touch2.x - initialTouches[1].x,
+          touch2.y - initialTouches[1].y
+        );
+        
+        // Actualizar el ancla al dedo que se ha movido menos
+        anchorTouch = movement1 < movement2 ? touch1 : touch2;
+      }
+
       const currentDistance = Math.hypot(
-        touch2.clientX - touch1.clientX,
-        touch2.clientY - touch1.clientY
+        touch2.x - touch1.x,
+        touch2.y - touch1.y
       );
 
       if (lastDistance === 0) {
@@ -467,35 +513,30 @@ const Canvas = () => {
       }
 
       const oldScale = stage.scaleX();
-
-      // Centro entre los dos dedos
-      const centerX = (touch1.clientX + touch2.clientX) / 2;
-      const centerY = (touch1.clientY + touch2.clientY) / 2;
-
-      const mousePointTo = {
-        x: (centerX - stage.x()) / oldScale,
-        y: (centerY - stage.y()) / oldScale,
-      };
-
-      // Calcular nuevo scale con mayor sensibilidad
+      
+      // Usar el dedo ancla como punto pivote
+      const pivot = anchorTouch || touch1;
       const scaleDelta = currentDistance / lastDistance;
-      // Amplificar el cambio para hacerlo más rápido
-      const amplifiedDelta = 1 + (scaleDelta - 1) * 2.5; // Factor 2.5 para mayor velocidad
-      let newScale = oldScale * amplifiedDelta;
-
-      // Limitar escala
+      const safeDelta = Number.isFinite(scaleDelta) ? scaleDelta : 1;
+      const clampedDelta = Math.max(0.9, Math.min(1.1, safeDelta));
+      let newScale = oldScale * clampedDelta;
       newScale = Math.max(0.1, Math.min(5, newScale));
 
+      // Convertir el punto pivote a coordenadas del stage
+      const stagePoint = toStageCoords(pivot);
+      
+      // Aplicar nueva escala
       stage.scale({ x: newScale, y: newScale });
-
+      
+      // Ajustar posición para mantener el ancla en su lugar
       const newPos = {
-        x: centerX - mousePointTo.x * newScale,
-        y: centerY - mousePointTo.y * newScale,
+        x: pivot.x - stagePoint.x * newScale,
+        y: pivot.y - stagePoint.y * newScale,
       };
       stage.position(newPos);
       stage.batchDraw();
 
-      setScale(newScale);
+      updateScale(newScale);
       lastDistance = currentDistance;
     };
 
@@ -503,6 +544,10 @@ const Canvas = () => {
       if (e.touches.length < 2) {
         isPinching = false;
         lastDistance = 0;
+        anchorTouch = null;
+        initialTouches = [];
+        stage.stopDrag();
+        stage.draggable(storedDraggable);
       }
     };
 
