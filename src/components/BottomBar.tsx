@@ -46,13 +46,15 @@ export function BottomBar() {
 
   const handleMoveForward = () => {
     if (rollsCount > 0) {
-      setCurrentRollIndex((prev) => (prev + 1) % rollsCount);
+      const nextIndex = (currentRollIndex + 1) % rollsCount;
+      centerOnRoll(nextIndex);
     }
   };
 
   const handleMoveBackward = () => {
     if (rollsCount > 0) {
-      setCurrentRollIndex((prev) => (prev - 1 + rollsCount) % rollsCount);
+      const prevIndex = (currentRollIndex - 1 + rollsCount) % rollsCount;
+      centerOnRoll(prevIndex);
     }
   };
 
