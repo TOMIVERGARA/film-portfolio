@@ -39,52 +39,82 @@ const Photo = ({
     if (!groupRef.current) return;
 
     const node = groupRef.current;
-    const baseX = x - width / 2;
-    const baseY = y - width / aspectRatio / 2;
-    let anim: Konva.Animation;
-
-    anim = new Konva.Animation((frame) => {
-      if (!frame) return;
-
-      const time = frame.time / 1000;
-      const floatAmplitude = Math.min(2.5 / zoomScale, 3.5);
-      const floatSpeed = Math.min(0.5 / zoomScale, 0.8);
-
-      const offsetX = Math.sin(time * floatSpeed + baseX) * floatAmplitude;
-      const offsetY = Math.cos(time * floatSpeed + baseY) * floatAmplitude;
-
-      node.x(baseX + offsetX);
-      node.y(baseY + offsetY);
-    }, node.getLayer());
-
-    anim.start();
-
-    return () => {
-      anim.stop();
-    };
-  }, [x, y, zoomScale, width, aspectRatio]);
+    // Animation only affects the offset, not the base position
+    // We use a separate layer or group for animation if possible,
+    // but here we can just add the offset to the 0,0 of the group if the group is positioned by props?
+    // Actually, react-konva updates x/y props. If we manually set x/y in animation, it conflicts.
+    // Better approach: Use an inner group for animation.
+  }, []);
 
   if (!image) return null;
 
+  // Calculate scaled dimensions
+  const scaledWidth = width * zoomScale;
+  const scaledHeight = (width / aspectRatio) * zoomScale;
+  const fontSize = Math.max(11 * zoomScale, 8); // Prevent text from becoming too small
+
   return (
-    <Group ref={groupRef}>
-      <KonvaImage image={image} width={width} height={width / aspectRatio} />
-      {note && (
-        <Text
-          text={"*" + note}
-          width={width}
-          align="left"
-          fill="#ababab"
-          fontSize={11}
-          fontStyle="italic"
-          fontFamily="Helvetica"
-          y={width / aspectRatio + 5} // Posición debajo de la imagen
-          wrap="word"
-          ellipsis={true}
+    <Group x={x} y={y}>
+      {/* Inner group for floating animation */}
+      <FloatingGroup zoomScale={zoomScale}>
+        <KonvaImage
+          image={image}
+          width={scaledWidth}
+          height={scaledHeight}
+          x={-scaledWidth / 2} // Center the image
+          y={-scaledHeight / 2}
         />
-      )}
+        {note && (
+          <Text
+            text={"*" + note}
+            width={scaledWidth}
+            align="left"
+            fill="#ababab"
+            fontSize={fontSize}
+            fontStyle="italic"
+            fontFamily="Helvetica"
+            x={-scaledWidth / 2}
+            y={scaledHeight / 2 + 5 * zoomScale}
+            wrap="word"
+            ellipsis={true}
+          />
+        )}
+      </FloatingGroup>
     </Group>
   );
+};
+
+// Helper component to handle animation independently
+const FloatingGroup = ({
+  children,
+  zoomScale,
+}: {
+  children: React.ReactNode;
+  zoomScale: number;
+}) => {
+  const ref = useRef<any>(null);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+
+    const anim = new Konva.Animation((frame) => {
+      if (!frame) return;
+      const time = frame.time / 1000;
+      const floatAmplitude = Math.min(5 * zoomScale, 10); // Scale amplitude with zoom
+      const floatSpeed = 0.5;
+
+      // Animate offset relative to parent
+      node.y(Math.sin(time * floatSpeed) * floatAmplitude);
+    }, node.getLayer());
+
+    anim.start();
+    return () => {
+      anim.stop();
+    };
+  }, [zoomScale]);
+
+  return <Group ref={ref}>{children}</Group>;
 };
 
 export default Photo;

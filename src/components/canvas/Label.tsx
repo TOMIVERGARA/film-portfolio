@@ -15,79 +15,93 @@ interface LabelProps {
 }
 
 const Label = ({ x, y, width, zoomScale, metadata }: LabelProps) => {
-  const groupRef = useRef<any>(null);
   const nameRef = useRef<any>(null);
-  const [nameHeight, setNameHeight] = useState(24);
+  const [nameHeight, setNameHeight] = useState(30); // Default height estimate
+
+  // Use a larger base width for text layout to avoid aggressive wrapping
+  // We ignore the passed 'width' prop for text layout, treating it as a physics body size only.
+  const baseWidth = 400; 
+  const padding = 10;
 
   useEffect(() => {
     if (nameRef.current) {
+      // This height is now in "local" unscaled units because the parent group is scaled
       setNameHeight(nameRef.current.height());
     }
-  }, [metadata?.name, width]);
-
-  useEffect(() => {
-    if (!groupRef.current) return;
-
-    const node = groupRef.current;
-    const baseX = x - width / 2;
-    const baseY = y - 30;
-    let anim: Konva.Animation;
-
-    anim = new Konva.Animation((frame) => {
-      if (!frame) return;
-
-      const time = frame.time / 1000;
-      const floatAmplitude = Math.min(2.5 / zoomScale, 3.5);
-      const floatSpeed = Math.min(0.5 / zoomScale, 0.8);
-
-      const offsetX = Math.sin(time * floatSpeed + baseX) * floatAmplitude;
-      const offsetY = Math.cos(time * floatSpeed + baseY) * floatAmplitude;
-
-      node.x(baseX + offsetX);
-      node.y(baseY + offsetY);
-    }, node.getLayer());
-
-    anim.start();
-
-    return () => {
-      anim.stop();
-    };
-  }, [x, y, zoomScale, width]);
+  }, [metadata?.name]);
 
   return (
-    <Group ref={groupRef}>
-      <Text
-        text={metadata?.date?.toLowerCase() || "00/00/0000"}
-        x={10}
-        y={10}
-        width={width - 20}
-        fill="#ababab"
-        fontSize={14}
-        fontStyle="bold"
-        fontFamily="Helvetica"
-      />
-      <Text
-        ref={nameRef}
-        text={metadata?.name?.toLowerCase() || "Untitled Roll"}
-        x={10}
-        y={30}
-        width={width - 20}
-        fill="#fff"
-        fontSize={24}
-        fontStyle="italic bold"
-        fontFamily="Helvetica"
-      />
-      <Text
-        text={`${metadata?.filmstock?.toLowerCase() || "Unknown film"}`}
-        x={10}
-        y={30 + nameHeight + 5}
-        width={width - 20}
-        fill="#ababab"
-        fontSize={12}
-        fontFamily="Helvetica"
-      />
+    <Group x={x} y={y}>
+      {/* Apply scale here. This makes all children coordinates 'local' and stable */}
+      <Group scaleX={zoomScale} scaleY={zoomScale}>
+        <FloatingGroup>
+            <Group x={-baseWidth / 2} y={-30}>
+                <Text
+                    text={metadata?.date?.toLowerCase() || "00/00/0000"}
+                    x={padding}
+                    y={padding}
+                    width={baseWidth - padding * 2}
+                    fill="#ababab"
+                    fontSize={14}
+                    fontStyle="bold"
+                    fontFamily="Helvetica"
+                    align="left"
+                />
+                <Text
+                    ref={nameRef}
+                    text={metadata?.name?.toLowerCase() || "Untitled Roll"}
+                    x={padding}
+                    y={padding + 20} // Fixed offset for name
+                    width={baseWidth - padding * 2}
+                    fill="#fff"
+                    fontSize={32} // Bigger base font
+                    fontStyle="italic bold"
+                    fontFamily="Helvetica"
+                    align="left"
+                    lineHeight={1.1}
+                />
+                <Text
+                    text={`${metadata?.filmstock?.toLowerCase() || "Unknown film"}`}
+                    x={padding}
+                    y={padding + 20 + nameHeight + 5} // Position based on measured height (unscaled)
+                    width={baseWidth - padding * 2}
+                    fill="#ababab"
+                    fontSize={12}
+                    fontFamily="Helvetica"
+                    align="left"
+                />
+            </Group>
+        </FloatingGroup>
+      </Group>
     </Group>
   );
+};
+
+// Helper component to handle animation independently
+const FloatingGroup = ({ children }: { children: React.ReactNode }) => {
+    const ref = useRef<any>(null);
+    
+    useEffect(() => {
+        const node = ref.current;
+        if (!node) return;
+
+        // Randomize start time to avoid sync
+        const randomOffset = Math.random() * 100;
+
+        const anim = new Konva.Animation((frame) => {
+            if (!frame) return;
+            const time = frame.time / 1000 + randomOffset;
+            const floatAmplitude = 5; // Constant local amplitude (will be scaled by parent)
+            const floatSpeed = 0.5;
+
+            node.y(Math.sin(time * floatSpeed) * floatAmplitude);
+        }, node.getLayer());
+
+        anim.start();
+        return () => { anim.stop(); };
+    }, []);
+
+    return <Group ref={ref}>{children}</Group>;
 };
 
 export default Label;
