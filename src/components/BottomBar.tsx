@@ -78,18 +78,22 @@ export function BottomBar() {
     <>
       <AboutMe isVisible={showAbout} onClose={() => setShowAbout(false)} />
       <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50">
-        <div className="flex items-center gap-2 bg-neutral-950/40 backdrop-blur-lg p-1 shadow-lg">
+        <div className="flex items-center gap-2 bg-neutral-950/40 backdrop-blur-lg p-2 md:p-1 shadow-lg">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   size="icon"
                   asChild
-                  className="hover:bg-neutral-600/20 bg-black/0 rounded-none relative border-none" // Añade 'relative' aquí
+                  className="hover:bg-neutral-600/20 bg-black/0 rounded-none relative border-none h-12 w-12 md:h-10 md:w-10"
                   onClick={() => handleAboutClick()}
                 >
                   <Link href="/">
-                    {showAbout ? <Undo2 /> : <FileUser />}
+                    {showAbout ? (
+                      <Undo2 className="h-5 w-5 md:h-4 md:w-4" />
+                    ) : (
+                      <FileUser className="h-5 w-5 md:h-4 md:w-4" />
+                    )}
                     {/* Elemento de ping/anotación */}
                     {showNotification && (
                       <span className="absolute h-5 w-5">
@@ -122,11 +126,11 @@ export function BottomBar() {
                       <Button
                         size="icon"
                         asChild
-                        className="hover:bg-neutral-600/20 bg-black/0 rounded-none border-none"
+                        className="hover:bg-neutral-600/20 bg-black/0 rounded-none border-none h-12 w-12 md:h-10 md:w-10"
                         onClick={handleMoveBackward}
                       >
                         <Link href="/">
-                          <ArrowLeft />
+                          <ArrowLeft className="h-5 w-5 md:h-4 md:w-4" />
                         </Link>
                       </Button>
                     </TooltipTrigger>
@@ -139,11 +143,11 @@ export function BottomBar() {
                       <Button
                         size="icon"
                         asChild
-                        className="hover:bg-neutral-600/20 bg-black/0 hover:animate-pulse rounded-none border-none"
+                        className="hover:bg-neutral-600/20 bg-black/0 hover:animate-pulse rounded-none border-none h-12 w-12 md:h-10 md:w-10"
                         onClick={handleCenter}
                       >
                         <Link href="/">
-                          <Target />
+                          <Target className="h-5 w-5 md:h-4 md:w-4" />
                         </Link>
                       </Button>
                     </TooltipTrigger>
@@ -156,11 +160,11 @@ export function BottomBar() {
                       <Button
                         size="icon"
                         asChild
-                        className="hover:bg-neutral-600/20 bg-black/0 rounded-none border-none"
+                        className="hover:bg-neutral-600/20 bg-black/0 rounded-none border-none h-12 w-12 md:h-10 md:w-10"
                         onClick={handleMoveForward}
                       >
                         <Link href="/">
-                          <ArrowRight />
+                          <ArrowRight className="h-5 w-5 md:h-4 md:w-4" />
                         </Link>
                       </Button>
                     </TooltipTrigger>
@@ -186,9 +190,9 @@ export function BottomBar() {
               <DialogTrigger asChild>
                 <Button
                   size="icon"
-                  className="hover:bg-neutral-600/20 bg-black/0 rounded-none border-none"
+                  className="hover:bg-neutral-600/20 bg-black/0 rounded-none border-none h-12 w-12 md:h-10 md:w-10"
                 >
-                  <Info />
+                  <Info className="h-5 w-5 md:h-4 md:w-4" />
                 </Button>
               </DialogTrigger>
               <DialogContent className="h-screen max-w-full w-screen top-0 left-0 translate-x-0 translate-y-0 bg-black/90 backdrop-blur-xl border-none text-white p-8 flex flex-col items-center justify-center">
@@ -227,11 +231,11 @@ export function BottomBar() {
               <HoverCardTrigger asChild>
                 <Button
                   size="icon"
-                  className="hover:bg-neutral-600/20 bg-black/0 rounded-none border-none"
+                  className="hover:bg-neutral-600/20 bg-black/0 rounded-none border-none h-12 w-12 md:h-10 md:w-10"
                   asChild
                 >
                   <Link href="/">
-                    <Info />
+                    <Info className="h-5 w-5 md:h-4 md:w-4" />
                   </Link>
                 </Button>
               </HoverCardTrigger>
