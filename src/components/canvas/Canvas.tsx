@@ -210,10 +210,31 @@ const Canvas = () => {
   const handleWheel = (e: any) => {
     e.evt.preventDefault();
     const delta = e.evt.deltaY;
+    const zoomSpeed = 2.5;
+    const dz = delta * zoomSpeed;
+
+    // Calculate mouse position relative to center
+    const stage = stageRef.current;
+    if (!stage) return;
+
+    const pointer = stage.getPointerPosition();
+    if (!pointer) return;
+
+    const width = typeof window !== "undefined" ? window.innerWidth : 1000;
+    const height = typeof window !== "undefined" ? window.innerHeight : 800;
+
+    const mx = pointer.x - width / 2;
+    const my = pointer.y - height / 2;
+
+    // Calculate lateral movement to zoom towards cursor
+    // When zooming in (dz > 0), we move camera towards mouse to keep it centered
+    const dx = mx * (dz / FL);
+    const dy = my * (dz / FL);
 
     setCamera((prev) => ({
-      ...prev,
-      z: prev.z + delta * 2, // Zoom speed
+      x: prev.x + dx,
+      y: prev.y + dy,
+      z: prev.z + dz,
     }));
   };
 
@@ -249,7 +270,7 @@ const Canvas = () => {
         width: "100vw",
         height: "100vh",
         overflow: "hidden",
-        background: "#171717",
+        background: "#0D0D0D",
       }}
     >
       <Stage
