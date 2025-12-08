@@ -10,6 +10,7 @@ import {
   FileUser,
   Undo2,
   Info,
+  X,
 } from "lucide-react";
 
 import Link from "next/link";
@@ -27,9 +28,12 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+
 import { Separator } from "./ui/separator";
 import { AboutMe } from "./AboutMe";
 import { useEffect, useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function BottomBar() {
   const { currentRollIndex, rollsCount, centerOnRoll, setCurrentRollIndex } =
@@ -37,6 +41,8 @@ export function BottomBar() {
 
   const [showAbout, setShowAbout] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
+  const [showInfoDialog, setShowInfoDialog] = useState(false);
+  const isMobile = useIsMobile();
 
   const handleMoveForward = () => {
     if (rollsCount > 0) {
@@ -174,47 +180,93 @@ export function BottomBar() {
             </Tooltip>
           </TooltipProvider>
 
-          <HoverCard openDelay={200} closeDelay={0}>
-            <HoverCardTrigger asChild>
-              <Button
-                size="icon"
-                className="hover:bg-neutral-600/20 bg-black/0  rounded-none border-none"
-                asChild
-              >
-                <Link href="/">
+          {/* Info button - Dialog en móvil, HoverCard en desktop */}
+          {isMobile ? (
+            <Dialog open={showInfoDialog} onOpenChange={setShowInfoDialog}>
+              <DialogTrigger asChild>
+                <Button
+                  size="icon"
+                  className="hover:bg-neutral-600/20 bg-black/0 rounded-none border-none"
+                >
                   <Info />
-                </Link>
-              </Button>
-            </HoverCardTrigger>
-            <HoverCardContent sideOffset={15}>
-              <div className="prose prose-invert prose-neutral">
-                <h4 className="text-lg font-serif">did you know?</h4>
-                <p className="lowercase text-justify text-sm">
-                  This portfolio is meant to represent how these photos live in
-                  my mind:{" "}
-                  <i>
-                    <b>
-                      organized, yet a little chaotic. Structured, but organic.
-                    </b>
-                  </i>{" "}
-                  Just a collection of images with strong meaning, floating
-                  freely through infinite space.
-                </p>
-                <p className="lowercase text-justify text-sm mt-1/2">
-                  To reflect that, the canvas you're seeing is procedurally
-                  generated using a simulation of physical forces. These forces
-                  determine how each image interacts with the others, making the
-                  layout unique to you, in this moment.
-                </p>
-                <Separator className="mt-0 mb-0 h-0.5" />
-                <p className="lowercase text-justify text-sm mt-1/2 italic">
-                  You can use the navigation controls to move between different
-                  rolls, but you're also free to zoom, pan, and explore as much
-                  as you like. Take your time—there's no wrong way to wander.
-                </p>
-              </div>
-            </HoverCardContent>
-          </HoverCard>
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="h-screen max-w-full w-screen top-0 left-0 translate-x-0 translate-y-0 bg-black/90 backdrop-blur-xl border-none text-white p-8 flex flex-col items-center justify-center">
+                <div className="prose prose-invert prose-neutral max-w-md">
+                  <h4 className="text-2xl font-serif mb-4">did you know?</h4>
+                  <p className="lowercase text-justify text-base">
+                    This portfolio is meant to represent how these photos live
+                    in my mind:{" "}
+                    <i>
+                      <b>
+                        organized, yet a little chaotic. Structured, but
+                        organic.
+                      </b>
+                    </i>{" "}
+                    Just a collection of images with strong meaning, floating
+                    freely through infinite space.
+                  </p>
+                  <p className="lowercase text-justify text-base mt-4">
+                    To reflect that, the canvas you're seeing is procedurally
+                    generated using a simulation of physical forces. These
+                    forces determine how each image interacts with the others,
+                    making the layout unique to you, in this moment.
+                  </p>
+                  <Separator className="my-4 h-0.5" />
+                  <p className="lowercase text-justify text-base italic">
+                    You can use the navigation controls to move between
+                    different rolls, but you're also free to zoom, pan, and
+                    explore as much as you like. Take your time—there's no wrong
+                    way to wander.
+                  </p>
+                </div>
+              </DialogContent>
+            </Dialog>
+          ) : (
+            <HoverCard openDelay={200} closeDelay={0}>
+              <HoverCardTrigger asChild>
+                <Button
+                  size="icon"
+                  className="hover:bg-neutral-600/20 bg-black/0 rounded-none border-none"
+                  asChild
+                >
+                  <Link href="/">
+                    <Info />
+                  </Link>
+                </Button>
+              </HoverCardTrigger>
+              <HoverCardContent sideOffset={15}>
+                <div className="prose prose-invert prose-neutral">
+                  <h4 className="text-lg font-serif">did you know?</h4>
+                  <p className="lowercase text-justify text-sm">
+                    This portfolio is meant to represent how these photos live
+                    in my mind:{" "}
+                    <i>
+                      <b>
+                        organized, yet a little chaotic. Structured, but
+                        organic.
+                      </b>
+                    </i>{" "}
+                    Just a collection of images with strong meaning, floating
+                    freely through infinite space.
+                  </p>
+                  <p className="lowercase text-justify text-sm mt-1/2">
+                    To reflect that, the canvas you're seeing is procedurally
+                    generated using a simulation of physical forces. These
+                    forces determine how each image interacts with the others,
+                    making the layout unique to you, in this moment.
+                  </p>
+                  <Separator className="mt-0 mb-0 h-0.5" />
+                  <p className="lowercase text-justify text-sm mt-1/2 italic">
+                    You can use the navigation controls to move between
+                    different rolls, but you're also free to zoom, pan, and
+                    explore as much as you like. Take your time—there's no wrong
+                    way to wander.
+                  </p>
+                </div>
+              </HoverCardContent>
+            </HoverCard>
+          )}
         </div>
       </div>
     </>
