@@ -40,16 +40,20 @@ const Canvas = () => {
     const W = typeof window !== "undefined" ? window.innerWidth : 1000;
     const H = typeof window !== "undefined" ? window.innerHeight : 800;
 
-    // Layout configuration - INCREASED SPACING
-    const R = 2500; // Radius for roll clusters (was 1500)
-    const N = rolls.length;
+    // Layout configuration - ORGANIC SPIRAL
+    const spacing = 2000; // Spacing parameter for spiral
 
-    // Calculate centers for each roll in 3D space
-    const centers = rolls.map((_, i) => ({
-      x: W / 2 + R * Math.cos((2 * Math.PI * i) / N),
-      y: H / 2 + R * Math.sin((2 * Math.PI * i) / N),
-      z: Math.random() * 4000, // Increased depth spread (was 2000)
-    }));
+    // Calculate centers for each roll in 3D space using Phyllotaxis (Golden Angle Spiral)
+    const centers = rolls.map((_, i) => {
+      const angle = i * 2.4; // Approx golden angle in radians
+      const radius = spacing * Math.sqrt(i);
+
+      return {
+        x: W / 2 + radius * Math.cos(angle),
+        y: H / 2 + radius * Math.sin(angle),
+        z: Math.random() * 4000, // Keep depth variation
+      };
+    });
 
     setRollCenters(centers);
     setRollsCount(rolls.length);

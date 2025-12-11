@@ -25,9 +25,7 @@ const Photo = ({
   onImageLoad,
 }: PhotoProps) => {
   const image = useImage(url);
-  const groupRef = useRef<any>(null);
   const [aspectRatio, setAspectRatio] = useState(1);
-  const [textWidth, setTextWidth] = useState(width);
 
   useEffect(() => {
     if (image) {
@@ -35,76 +33,65 @@ const Photo = ({
     }
   }, [image]);
 
-  useEffect(() => {
-    if (!groupRef.current) return;
-
-    const node = groupRef.current;
-    // Animation only affects the offset, not the base position
-    // We use a separate layer or group for animation if possible,
-    // but here we can just add the offset to the 0,0 of the group if the group is positioned by props?
-    // Actually, react-konva updates x/y props. If we manually set x/y in animation, it conflicts.
-    // Better approach: Use an inner group for animation.
-  }, []);
-
   if (!image) return null;
 
-  // Calculate scaled dimensions
-  const scaledWidth = width * zoomScale;
-  const scaledHeight = (width / aspectRatio) * zoomScale;
-  const fontSize = Math.max(11 * zoomScale, 8); // Prevent text from becoming too small
+  // Calculate font size relative to image width to maintain proportion
+  // This ensures text doesn't look huge on small images or tiny on large ones
+  const fontSize = Math.max(width * 0.05, 14);
+  const height = width / aspectRatio;
 
   return (
     <Group x={x} y={y}>
-      {/* Inner group for floating animation */}
-      <FloatingGroup zoomScale={zoomScale}>
-        <KonvaImage
-          image={image}
-          width={scaledWidth}
-          height={scaledHeight}
-          x={-scaledWidth / 2} // Center the image
-          y={-scaledHeight / 2}
-        />
-        {note && (
-          <Text
-            text={"*" + note}
-            width={scaledWidth}
-            align="left"
-            fill="#ababab"
-            fontSize={fontSize}
-            fontStyle="italic"
-            fontFamily="Helvetica"
-            x={-scaledWidth / 2}
-            y={scaledHeight / 2 + 5 * zoomScale}
-            wrap="word"
-            ellipsis={true}
+      {/* Apply scale to the container group for stable layout */}
+      <Group scaleX={zoomScale} scaleY={zoomScale}>
+        <FloatingGroup>
+          <KonvaImage
+            image={image}
+            width={width}
+            height={height}
+            x={-width / 2}
+            y={-height / 2}
           />
-        )}
-      </FloatingGroup>
+          {note && (
+            <Text
+              text={"*" + note}
+              width={width}
+              align="left"
+              fill="#ababab"
+              fontSize={fontSize}
+              fontStyle="italic"
+              fontFamily="Helvetica"
+              x={-width / 2}
+              y={height / 2 + width * 0.02} // Spacing relative to width
+              wrap="word"
+              ellipsis={true}
+              lineHeight={1.2}
+            />
+          )}
+        </FloatingGroup>
+      </Group>
     </Group>
   );
 };
 
 // Helper component to handle animation independently
-const FloatingGroup = ({
-  children,
-  zoomScale,
-}: {
-  children: React.ReactNode;
-  zoomScale: number;
-}) => {
+const FloatingGroup = ({ children }: { children: React.ReactNode }) => {
   const ref = useRef<any>(null);
 
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
 
+    // Randomize start time
+    const randomOffset = Math.random() * 100;
+
     const anim = new Konva.Animation((frame) => {
       if (!frame) return;
-      const time = frame.time / 1000;
-      const floatAmplitude = Math.min(5 * zoomScale, 10); // Scale amplitude with zoom
+      const time = frame.time / 1000 + randomOffset;
+      // Amplitude is in local units, will be scaled by parent
+      const floatAmplitude = 5;
       const floatSpeed = 0.5;
 
-      // Animate offset relative to parent
       node.y(Math.sin(time * floatSpeed) * floatAmplitude);
     }, node.getLayer());
 
@@ -112,7 +99,7 @@ const FloatingGroup = ({
     return () => {
       anim.stop();
     };
-  }, [zoomScale]);
+  }, []);
 
   return <Group ref={ref}>{children}</Group>;
 };
