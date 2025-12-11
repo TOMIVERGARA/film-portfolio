@@ -5,6 +5,7 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import { Stage, Layer } from "react-konva";
 import Photo from "./Photo";
 import Label from "./Label";
+import { Button } from "../ui/button";
 import { forceSimulation, forceCollide, forceX, forceY } from "d3-force";
 import { GraphNode } from "@/types";
 import Konva from "konva";
@@ -19,6 +20,8 @@ const Canvas = () => {
     shouldCenter,
     setShouldCenter,
     rolls,
+    isLost,
+    setIsLost,
   } = useCanvas();
 
   // Camera state: x, y, z position
@@ -31,7 +34,7 @@ const Canvas = () => {
   // Interaction state
   const isDragging = useRef(false);
   const lastMouse = useRef({ x: 0, y: 0 });
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | null>(null);
 
   // Initialize nodes with 3D positions
   useEffect(() => {
@@ -179,6 +182,25 @@ const Canvas = () => {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
   }, [shouldCenter, currentRollIndex, rollCenters, setShouldCenter]); // Removed 'camera' from deps to avoid loop
+
+  // Check if user is "lost"
+  useEffect(() => {
+    if (nodes.length === 0 || shouldCenter) return;
+
+    const maxZ = Math.max(...nodes.map((n) => n.z || 0));
+
+    // If camera is significantly past the last node
+    if (camera.z > maxZ + 2000 && !isLost) {
+      setIsLost(true);
+    } else if (camera.z <= maxZ + 2000 && isLost) {
+      setIsLost(false);
+    }
+  }, [camera.z, nodes, isLost, shouldCenter]);
+
+  const handleReturn = () => {
+    setShouldCenter(true);
+    setIsLost(false);
+  };
 
   // Projection logic
   const projectedNodes = useMemo(() => {
@@ -335,6 +357,36 @@ const Canvas = () => {
           })}
         </Layer>
       </Stage>
+
+      {/* Lost State Overlay */}
+      <div
+        className={`absolute inset-0 flex items-center justify-center transition-colors duration-1000 z-50 ${
+          isLost
+            ? "bg-white pointer-events-auto"
+            : "bg-transparent pointer-events-none"
+        }`}
+      >
+        <div
+          className={`text-center space-y-6 transition-opacity duration-1000 ${
+            isLost ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          <h1 className="text-4xl font-bold text-black tracking-tighter font-serif">
+            lost in the void?
+          </h1>
+          <p className="text-neutral-600 max-w-md mx-auto text-lg">
+            you have drifted beyond the boundaries of the known universe, into
+            the silent space where photos dissolve. the view is endless, but the
+            stories are back where you started.
+          </p>
+          <Button
+            onClick={handleReturn}
+            className="bg-black text-white hover:bg-neutral-800 border-none"
+          >
+            return to the light...
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };
