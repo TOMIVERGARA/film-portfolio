@@ -34,6 +34,7 @@ const Canvas = () => {
   // Interaction state
   const isDragging = useRef(false);
   const lastMouse = useRef({ x: 0, y: 0 });
+  const lastDist = useRef<number>(0);
   const animationRef = useRef<number | null>(null);
 
   // Initialize nodes with 3D positions
@@ -309,24 +310,74 @@ const Canvas = () => {
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
         onTouchStart={(e) => {
-          const touch = e.evt.touches[0];
-          lastMouse.current = { x: touch.clientX, y: touch.clientY };
-          isDragging.current = true;
+          if (e.evt.touches.length === 1) {
+            const touch = e.evt.touches[0];
+            lastMouse.current = { x: touch.clientX, y: touch.clientY };
+            isDragging.current = true;
+          } else if (e.evt.touches.length === 2) {
+            isDragging.current = false;
+            const t1 = e.evt.touches[0];
+            const t2 = e.evt.touches[1];
+            const dist = Math.hypot(
+              t1.clientX - t2.clientX,
+              t1.clientY - t2.clientY
+            );
+            lastDist.current = dist;
+          }
         }}
         onTouchMove={(e) => {
-          if (!isDragging.current) return;
-          const touch = e.evt.touches[0];
-          const dx = touch.clientX - lastMouse.current.x;
-          const dy = touch.clientY - lastMouse.current.y;
-          lastMouse.current = { x: touch.clientX, y: touch.clientY };
+          if (e.evt.touches.length === 1 && isDragging.current) {
+            const touch = e.evt.touches[0];
+            const dx = touch.clientX - lastMouse.current.x;
+            const dy = touch.clientY - lastMouse.current.y;
+            lastMouse.current = { x: touch.clientX, y: touch.clientY };
 
-          setCamera((prev) => ({
-            ...prev,
-            x: prev.x - dx * 2,
-            y: prev.y - dy * 2,
-          }));
+            setCamera((prev) => ({
+              ...prev,
+              x: prev.x - dx * 2,
+              y: prev.y - dy * 2,
+            }));
+          } else if (e.evt.touches.length === 2) {
+            const t1 = e.evt.touches[0];
+            const t2 = e.evt.touches[1];
+            const dist = Math.hypot(
+              t1.clientX - t2.clientX,
+              t1.clientY - t2.clientY
+            );
+
+            if (lastDist.current > 0) {
+              const deltaDist = dist - lastDist.current;
+              const zoomSpeed = 5;
+              const dz = deltaDist * zoomSpeed;
+
+              // Calculate center of pinch
+              const cx = (t1.clientX + t2.clientX) / 2;
+              const cy = (t1.clientY + t2.clientY) / 2;
+
+              const width =
+                typeof window !== "undefined" ? window.innerWidth : 1000;
+              const height =
+                typeof window !== "undefined" ? window.innerHeight : 800;
+
+              const mx = cx - width / 2;
+              const my = cy - height / 2;
+
+              const dx = mx * (dz / FL);
+              const dy = my * (dz / FL);
+
+              setCamera((prev) => ({
+                x: prev.x + dx,
+                y: prev.y + dy,
+                z: prev.z + dz,
+              }));
+            }
+            lastDist.current = dist;
+          }
         }}
-        onTouchEnd={handleMouseUp}
+        onTouchEnd={() => {
+          isDragging.current = false;
+          lastDist.current = 0;
+        }}
       >
         <Layer>
           {projectedNodes.map((node) => {
