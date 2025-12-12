@@ -58,7 +58,7 @@ export default function LoginPage() {
         <div className="bg-neutral-950/40 backdrop-blur-lg p-8 shadow-lg border border-neutral-800">
           <div className="mb-6">
             <h1 className="text-3xl font-['Playfair'] font-bold mb-2 lowercase text-white">
-              administración
+              panel de administracion
             </h1>
             <p className="text-sm text-neutral-400 lowercase">
               ingresa tus credenciales para acceder
@@ -78,7 +78,7 @@ export default function LoginPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
-                className="bg-transparent border-neutral-700 rounded-none backdrop-blur-sm focus-visible:ring-0 focus-visible:border-primary text-white"
+                placeholder="johnappleseed"
               />
             </div>
             <div className="space-y-2">
@@ -92,15 +92,15 @@ export default function LoginPage() {
                 id="password"
                 type="password"
                 value={password}
+                placeholder="•••••••••••"
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="bg-transparent border-neutral-700 rounded-none backdrop-blur-sm focus-visible:ring-0 focus-visible:border-primary text-white"
               />
             </div>
             {error && <p className="text-sm text-red-400 lowercase">{error}</p>}
             <Button
               type="submit"
-              className="w-full bg-transparent hover:bg-neutral-600/20 rounded-none lowercase border border-neutral-700 text-white"
+              className="w-full bg-transparent hover:bg-neutral-600/20 rounded-none lowercase border border-neutral-700 text-white hover:animate-pulse"
               disabled={isLoading}
             >
               {isLoading ? "iniciando sesión..." : "iniciar sesión"}
