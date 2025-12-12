@@ -25,9 +25,7 @@ const Photo = ({
   onImageLoad,
 }: PhotoProps) => {
   const image = useImage(url);
-  const groupRef = useRef<any>(null);
   const [aspectRatio, setAspectRatio] = useState(1);
-  const [textWidth, setTextWidth] = useState(width);
 
   useEffect(() => {
     if (image) {
@@ -35,56 +33,75 @@ const Photo = ({
     }
   }, [image]);
 
+  if (!image) return null;
+
+  // Calculate font size relative to image width to maintain proportion
+  // This ensures text doesn't look huge on small images or tiny on large ones
+  const fontSize = Math.max(width * 0.05, 14);
+  const height = width / aspectRatio;
+
+  return (
+    <Group x={x} y={y}>
+      {/* Apply scale to the container group for stable layout */}
+      <Group scaleX={zoomScale} scaleY={zoomScale}>
+        <FloatingGroup>
+          <KonvaImage
+            image={image}
+            width={width}
+            height={height}
+            x={-width / 2}
+            y={-height / 2}
+          />
+          {note && (
+            <Text
+              text={"*" + note}
+              width={width}
+              align="left"
+              fill="#ababab"
+              fontSize={fontSize}
+              fontStyle="italic"
+              fontFamily="Helvetica"
+              x={-width / 2}
+              y={height / 2 + width * 0.02} // Spacing relative to width
+              wrap="word"
+              ellipsis={true}
+              lineHeight={1.2}
+            />
+          )}
+        </FloatingGroup>
+      </Group>
+    </Group>
+  );
+};
+
+// Helper component to handle animation independently
+const FloatingGroup = ({ children }: { children: React.ReactNode }) => {
+  const ref = useRef<any>(null);
+
   useEffect(() => {
-    if (!groupRef.current) return;
+    const node = ref.current;
+    if (!node) return;
 
-    const node = groupRef.current;
-    const baseX = x - width / 2;
-    const baseY = y - width / aspectRatio / 2;
-    let anim: Konva.Animation;
+    // Randomize start time
+    const randomOffset = Math.random() * 100;
 
-    anim = new Konva.Animation((frame) => {
+    const anim = new Konva.Animation((frame) => {
       if (!frame) return;
+      const time = frame.time / 1000 + randomOffset;
+      // Amplitude is in local units, will be scaled by parent
+      const floatAmplitude = 5;
+      const floatSpeed = 0.5;
 
-      const time = frame.time / 1000;
-      const floatAmplitude = Math.min(2.5 / zoomScale, 3.5);
-      const floatSpeed = Math.min(0.5 / zoomScale, 0.8);
-
-      const offsetX = Math.sin(time * floatSpeed + baseX) * floatAmplitude;
-      const offsetY = Math.cos(time * floatSpeed + baseY) * floatAmplitude;
-
-      node.x(baseX + offsetX);
-      node.y(baseY + offsetY);
+      node.y(Math.sin(time * floatSpeed) * floatAmplitude);
     }, node.getLayer());
 
     anim.start();
-
     return () => {
       anim.stop();
     };
-  }, [x, y, zoomScale, width, aspectRatio]);
+  }, []);
 
-  if (!image) return null;
-
-  return (
-    <Group ref={groupRef}>
-      <KonvaImage image={image} width={width} height={width / aspectRatio} />
-      {note && (
-        <Text
-          text={"*" + note}
-          width={width}
-          align="left"
-          fill="#ababab"
-          fontSize={11}
-          fontStyle="italic"
-          fontFamily="Helvetica"
-          y={width / aspectRatio + 5} // Posición debajo de la imagen
-          wrap="word"
-          ellipsis={true}
-        />
-      )}
-    </Group>
-  );
+  return <Group ref={ref}>{children}</Group>;
 };
 
 export default Photo;

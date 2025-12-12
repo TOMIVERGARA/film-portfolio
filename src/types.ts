@@ -24,6 +24,7 @@ export interface GraphNode extends SimulationNodeDatum {
     rolloCenter: { x: number; y: number };
     x?: number;
     y?: number;
+    z?: number; // Nuevo campo para profundidad 3D
     isLabel?: boolean; // Nuevo campo para identificar nodos de etiqueta
     isCentral?: boolean; // Nuevo campo para identificar nodo central
     metadata?: {

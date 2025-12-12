@@ -36,8 +36,13 @@ import { useEffect, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export function BottomBar() {
-  const { currentRollIndex, rollsCount, centerOnRoll, setCurrentRollIndex } =
-    useCanvas();
+  const {
+    currentRollIndex,
+    rollsCount,
+    centerOnRoll,
+    setCurrentRollIndex,
+    isLost,
+  } = useCanvas();
 
   const [showAbout, setShowAbout] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
@@ -46,13 +51,15 @@ export function BottomBar() {
 
   const handleMoveForward = () => {
     if (rollsCount > 0) {
-      setCurrentRollIndex((prev) => (prev + 1) % rollsCount);
+      const nextIndex = (currentRollIndex + 1) % rollsCount;
+      centerOnRoll(nextIndex);
     }
   };
 
   const handleMoveBackward = () => {
     if (rollsCount > 0) {
-      setCurrentRollIndex((prev) => (prev - 1 + rollsCount) % rollsCount);
+      const prevIndex = (currentRollIndex - 1 + rollsCount) % rollsCount;
+      centerOnRoll(prevIndex);
     }
   };
 
@@ -73,6 +80,8 @@ export function BottomBar() {
     }
     setShowAbout(!showAbout);
   };
+
+  if (isLost) return null;
 
   return (
     <>

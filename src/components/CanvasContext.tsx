@@ -17,6 +17,8 @@ interface CanvasContextType {
   setRollsCount: React.Dispatch<React.SetStateAction<number>>;
   shouldCenter: boolean; // Nuevo: flag para activar el centrado
   setShouldCenter: React.Dispatch<React.SetStateAction<boolean>>; // Nuevo: setter del flag
+  isLost: boolean;
+  setIsLost: React.Dispatch<React.SetStateAction<boolean>>;
   rolls: Roll[];
   preloadProgress: number;
   isAppReady: boolean;
@@ -31,6 +33,8 @@ const CanvasContext = createContext<CanvasContextType>({
   setRollsCount: () => {},
   shouldCenter: false, // Valor inicial del flag
   setShouldCenter: () => {},
+  isLost: false,
+  setIsLost: () => {},
   rolls: [],
   preloadProgress: 0,
   isAppReady: false,
@@ -43,6 +47,7 @@ export function CanvasProvider({ children }: { children: React.ReactNode }) {
   const [currentRollIndex, setCurrentRollIndex] = useState(0);
   const [rollsCount, setRollsCount] = useState(0);
   const [shouldCenter, setShouldCenter] = useState(false);
+  const [isLost, setIsLost] = useState(false);
   const [rolls, setRolls] = useState<Roll[]>([]);
   const [preloadProgress, setPreloadProgress] = useState(0);
   const [isAppReady, setAppReady] = useState(false);
@@ -155,6 +160,8 @@ export function CanvasProvider({ children }: { children: React.ReactNode }) {
         preloadProgress,
         isAppReady,
         setAppReady,
+        isLost,
+        setIsLost,
       }}
     >
       {children}
