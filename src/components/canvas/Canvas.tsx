@@ -8,7 +8,6 @@ import Label from "./Label";
 import { Button } from "../ui/button";
 import { forceSimulation, forceCollide, forceX, forceY } from "d3-force";
 import { GraphNode } from "@/types";
-import Konva from "konva";
 
 const FL = 1400; // Focal Length for 3D projection
 

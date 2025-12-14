@@ -151,10 +151,14 @@
 html, body {
   margin: 0;
   padding: 0;
+  height: 100%;
+}
+
+/* Default behavior for the app (Canvas) */
+body:not(.scrollable) {
   overflow: hidden;
   overscroll-behavior: none;
   touch-action: none;
-  height: 100%;
 }
 
 #konva-container {

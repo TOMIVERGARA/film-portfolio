@@ -232,11 +232,20 @@ export function BottomBar() {
                     explore as much as you like. Take your time—there's no wrong
                     way to wander.
                   </p>
+                  <div className="mt-8 text-center">
+                    <Button
+                      variant="link"
+                      className="text-neutral-400 hover:text-white italic"
+                      asChild
+                    >
+                      <Link href="/gallery">prefer a simpler view?</Link>
+                    </Button>
+                  </div>
                 </div>
               </DialogContent>
             </Dialog>
           ) : (
-            <HoverCard openDelay={200} closeDelay={0}>
+            <HoverCard openDelay={200} closeDelay={100}>
               <HoverCardTrigger asChild>
                 <Button
                   size="icon"
@@ -276,6 +285,14 @@ export function BottomBar() {
                     explore as much as you like. Take your time—there's no wrong
                     way to wander.
                   </p>
+                  <div className="mt-4 text-center border-t border-neutral-800 pt-2">
+                    <Link
+                      href="/gallery"
+                      className="text-xs text-neutral-500 hover:text-white transition-colors italic"
+                    >
+                      prefer a simple list view?
+                    </Link>
+                  </div>
                 </div>
               </HoverCardContent>
             </HoverCard>

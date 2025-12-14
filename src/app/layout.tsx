@@ -16,13 +16,14 @@ export default function RootLayout({
 }>) {
   const pathname = usePathname();
   const isAdminRoute = pathname?.startsWith("/admin") || pathname === "/login";
+  const isScrollable = pathname !== "/";
 
   return (
     <html lang="en">
       <head>
         <title>tv - portfolio</title>
       </head>
-      <body>
+      <body className={isScrollable ? "scrollable" : ""}>
         {/* Sonner Toaster (shadcn wrapper) - disponible globalmente */}
         {/* Uses components/ui/sonner.tsx added by shadcn */}
         {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment */}
