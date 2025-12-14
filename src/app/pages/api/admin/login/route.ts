@@ -96,6 +96,15 @@ export async function POST(req: NextRequest) {
             }
         }, { status: 200 });
 
+        // Set HttpOnly cookie for middleware protection
+        response.cookies.set('auth_token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 60 * 60 * 24, // 24 hours
+            path: '/',
+        });
+
         return response;
 
     } catch (error) {

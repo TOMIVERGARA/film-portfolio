@@ -15,17 +15,27 @@ export async function POST(req: NextRequest) {
             const revoked = await revokeSession(authResult.user.jti);
 
             if (revoked) {
-                return NextResponse.json({
+                const response = NextResponse.json({
                     success: true,
                     message: 'Sesión cerrada correctamente'
                 }, { status: 200 });
+
+                // Clear the cookie
+                response.cookies.delete('auth_token');
+
+                return response;
             }
         }
 
-        return NextResponse.json({
+        const response = NextResponse.json({
             success: true,
             message: 'Sesión cerrada'
         }, { status: 200 });
+
+        // Clear the cookie
+        response.cookies.delete('auth_token');
+
+        return response;
 
     } catch (error) {
         console.error('Error during logout:', error);
