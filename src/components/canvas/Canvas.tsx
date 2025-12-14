@@ -10,7 +10,7 @@ import { forceSimulation, forceCollide, forceX, forceY } from "d3-force";
 import { GraphNode } from "@/types";
 import Konva from "konva";
 
-const FL = 1000; // Focal Length for 3D projection
+const FL = 1400; // Focal Length for 3D projection
 
 const Canvas = () => {
   const stageRef = useRef<any>(null);
@@ -45,7 +45,7 @@ const Canvas = () => {
     const H = typeof window !== "undefined" ? window.innerHeight : 800;
 
     // Layout configuration - ORGANIC SPIRAL
-    const spacing = 2000; // Spacing parameter for spiral
+    const spacing = 1100; // Spacing parameter for spiral
 
     // Calculate centers for each roll in 3D space using Phyllotaxis (Golden Angle Spiral)
     const centers = rolls.map((_, i) => {
@@ -55,7 +55,7 @@ const Canvas = () => {
       return {
         x: W / 2 + radius * Math.cos(angle),
         y: H / 2 + radius * Math.sin(angle),
-        z: Math.random() * 4000, // Keep depth variation
+        z: Math.random() * 3000, // Keep depth variation
       };
     });
 
@@ -96,7 +96,7 @@ const Canvas = () => {
         rolloCenter: c,
         x: c.x + Math.random() * 50 - 25,
         y: c.y + Math.random() * 50 - 25,
-        z: c.z - 1000, // Move significantly closer to camera to ensure it's on top
+        z: c.z, // Same depth as the central photo
         isLabel: true,
         metadata: roll.metadata,
       });
@@ -148,7 +148,7 @@ const Canvas = () => {
       if (center) {
         const targetX = center.x;
         const targetY = center.y;
-        const targetZ = center.z - 800;
+        const targetZ = center.z - 2000;
 
         // Simple animation loop
         const startTime = performance.now();
