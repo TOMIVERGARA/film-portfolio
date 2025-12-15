@@ -8,6 +8,7 @@ import {
   useEffect,
   useState,
 } from "react";
+import { useAnalyticsContext } from "./AnalyticsProvider";
 
 interface CanvasContextType {
   currentRollIndex: number;
@@ -51,6 +52,7 @@ export function CanvasProvider({ children }: { children: React.ReactNode }) {
   const [rolls, setRolls] = useState<Roll[]>([]);
   const [preloadProgress, setPreloadProgress] = useState(0);
   const [isAppReady, setAppReady] = useState(false);
+  const { trackPerformance } = useAnalyticsContext();
 
   const centerOnRoll = useCallback((index: number) => {
     setCurrentRollIndex(index);
@@ -107,31 +109,22 @@ export function CanvasProvider({ children }: { children: React.ReactNode }) {
         const avgPhotoLoadTime =
           loadTimes.reduce((a, b) => a + b, 0) / loadTimes.length;
         const totalPhotosLoaded = loadTimes.length;
+        const totalInitTime = performance.now() - preloadStartTime;
 
         console.log("[CanvasContext] Photos preloaded. Metrics:", {
+          canvasInitTime: Math.round(totalInitTime),
           firstPhotoLoadTime: Math.round(firstPhotoLoadTime),
           avgPhotoLoadTime: Math.round(avgPhotoLoadTime),
           totalPhotosLoaded,
         });
 
         // Enviar métricas a analytics
-        try {
-          await fetch("/pages/api/analytics/performance", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              sessionId: sessionStorage.getItem("analytics_session_id"),
-              firstPhotoLoadTime: Math.round(firstPhotoLoadTime),
-              avgPhotoLoadTime: Math.round(avgPhotoLoadTime),
-              totalPhotosLoaded,
-            }),
-          });
-        } catch (error) {
-          console.error(
-            "[CanvasContext] Failed to track photo load metrics:",
-            error
-          );
-        }
+        trackPerformance({
+          canvasInitTime: Math.round(totalInitTime),
+          firstPhotoLoadTime: Math.round(firstPhotoLoadTime),
+          avgPhotoLoadTime: Math.round(avgPhotoLoadTime),
+          totalPhotosLoaded,
+        });
       }
 
       // 5. Marcar como listo
@@ -140,7 +133,7 @@ export function CanvasProvider({ children }: { children: React.ReactNode }) {
       console.error("Error precargando recursos:", error);
       setAppReady(true); // Fallback: cargar igualmente
     }
-  }, []);
+  }, [trackPerformance]);
 
   useEffect(() => {
     preloadResources();

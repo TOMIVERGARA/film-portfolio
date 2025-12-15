@@ -6,39 +6,39 @@ const sql = neon(process.env.DATABASE_URL!);
 
 // GET: Get aggregated statistics
 export async function GET(request: NextRequest) {
-    try {
-        // Verify authentication
-        const authResult = await verifyAuth(request);
-        if (!authResult.isValid) {
-            return NextResponse.json(
-                { error: "Unauthorized" },
-                { status: 401 }
-            );
-        }
+  try {
+    // Verify authentication
+    const authResult = await verifyAuth(request);
+    if (!authResult.isValid) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
 
-        const { searchParams } = new URL(request.url);
-        const period = searchParams.get("period") || "7days"; // 7days, 30days, 90days, all
+    const { searchParams } = new URL(request.url);
+    const period = searchParams.get("period") || "7days"; // 7days, 30days, 90days, all
 
-        let dateFilter = "";
-        switch (period) {
-            case "7days":
-                dateFilter = "WHERE started_at >= CURRENT_DATE - INTERVAL '7 days'";
-                break;
-            case "30days":
-                dateFilter = "WHERE started_at >= CURRENT_DATE - INTERVAL '30 days'";
-                break;
-            case "90days":
-                dateFilter = "WHERE started_at >= CURRENT_DATE - INTERVAL '90 days'";
-                break;
-            default:
-                dateFilter = "";
-        }
+    let dateFilter = "";
+    switch (period) {
+      case "7days":
+        dateFilter = "WHERE started_at >= CURRENT_DATE - INTERVAL '7 days'";
+        break;
+      case "30days":
+        dateFilter = "WHERE started_at >= CURRENT_DATE - INTERVAL '30 days'";
+        break;
+      case "90days":
+        dateFilter = "WHERE started_at >= CURRENT_DATE - INTERVAL '90 days'";
+        break;
+      default:
+        dateFilter = "";
+    }
 
-        // Get overall stats
-        const overallStats = await sql`
+    // Get overall stats
+    const overallStats = await sql`
       SELECT 
         COUNT(*) as total_sessions,
-        COUNT(DISTINCT session_id) as unique_sessions,
+        COUNT(DISTINCT ip_address) as unique_sessions,
         SUM(CASE WHEN blocked_mobile THEN 1 ELSE 0 END) as mobile_blocked,
         SUM(CASE WHEN is_mobile THEN 1 ELSE 0 END) as mobile_visitors,
         SUM(CASE WHEN is_desktop THEN 1 ELSE 0 END) as desktop_visitors,
@@ -49,16 +49,25 @@ export async function GET(request: NextRequest) {
       ${dateFilter ? sql.unsafe(dateFilter) : sql``}
     `;
 
-        // Get page views count
-        const pageViewsResult = await sql`
+    // Get page views count
+    const pageViewsResult = await sql`
       SELECT COUNT(*) as total_views
       FROM page_views pv
       JOIN visitor_sessions vs ON pv.session_id = vs.id
       ${dateFilter ? sql.unsafe(dateFilter.replace('started_at', 'vs.started_at')) : sql``}
     `;
 
-        // Get top countries
-        const topCountries = await sql`
+    // Get gallery views specifically
+    const galleryViewsResult = await sql`
+      SELECT COUNT(*) as gallery_views
+      FROM page_views pv
+      JOIN visitor_sessions vs ON pv.session_id = vs.id
+      WHERE pv.page_path = '/gallery'
+      ${dateFilter ? sql.unsafe(dateFilter.replace('started_at', 'vs.started_at').replace('WHERE', 'AND')) : sql``}
+    `;
+
+    // Get top countries
+    const topCountries = await sql`
       SELECT 
         country,
         country_code,
@@ -71,8 +80,8 @@ export async function GET(request: NextRequest) {
       LIMIT 10
     `;
 
-        // Get browser distribution
-        const browserStats = await sql`
+    // Get browser distribution
+    const browserStats = await sql`
       SELECT 
         browser,
         COUNT(*) as count
@@ -82,8 +91,8 @@ export async function GET(request: NextRequest) {
       ORDER BY count DESC
     `;
 
-        // Get OS distribution
-        const osStats = await sql`
+    // Get OS distribution
+    const osStats = await sql`
       SELECT 
         os,
         COUNT(*) as count
@@ -93,8 +102,8 @@ export async function GET(request: NextRequest) {
       ORDER BY count DESC
     `;
 
-        // Get performance metrics
-        const performanceStats = await sql`
+    // Get performance metrics
+    const performanceStats = await sql`
       SELECT 
         AVG(page_load_time_ms)::INTEGER as avg_page_load,
         AVG(canvas_init_time_ms)::INTEGER as avg_canvas_init,
@@ -106,8 +115,8 @@ export async function GET(request: NextRequest) {
       ${dateFilter ? sql.unsafe(dateFilter.replace('started_at', 'vs.started_at')) : sql``}
     `;
 
-        // Get top events
-        const topEvents = await sql`
+    // Get top events
+    const topEvents = await sql`
       SELECT 
         event_type,
         event_category,
@@ -120,37 +129,40 @@ export async function GET(request: NextRequest) {
       LIMIT 10
     `;
 
-        // Get daily sessions for chart (last 30 days)
-        const dailySessions = await sql`
+    // Get daily sessions for chart (last 30 days)
+    const dailySessions = await sql`
       SELECT 
         DATE(started_at) as date,
         COUNT(*) as sessions,
-        COUNT(DISTINCT session_id) as unique_visitors
+        COUNT(DISTINCT ip_address) as unique_visitors
       FROM visitor_sessions
       WHERE started_at >= CURRENT_DATE - INTERVAL '30 days'
       GROUP BY DATE(started_at)
       ORDER BY date ASC
     `;
 
-        return NextResponse.json({
-            success: true,
-            period,
-            stats: {
-                overview: overallStats[0],
-                pageViews: pageViewsResult[0],
-                topCountries,
-                browsers: browserStats,
-                os: osStats,
-                performance: performanceStats[0],
-                topEvents,
-                dailySessions
-            }
-        });
-    } catch (error) {
-        console.error("Error fetching stats:", error);
-        return NextResponse.json(
-            { error: "Failed to fetch statistics" },
-            { status: 500 }
-        );
-    }
+    return NextResponse.json({
+      success: true,
+      period,
+      stats: {
+        overview: overallStats[0],
+        pageViews: {
+          ...pageViewsResult[0],
+          gallery_views: galleryViewsResult[0]?.gallery_views || 0
+        },
+        topCountries,
+        browsers: browserStats,
+        os: osStats,
+        performance: performanceStats[0],
+        topEvents,
+        dailySessions
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching stats:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch statistics" },
+      { status: 500 }
+    );
+  }
 }

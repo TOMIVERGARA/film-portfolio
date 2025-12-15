@@ -19,6 +19,7 @@ interface StatsCardsProps {
   };
   pageViews: {
     total_views: number;
+    gallery_views?: number;
   };
 }
 
@@ -78,6 +79,7 @@ export function StatsCards({ overview, pageViews }: StatsCardsProps) {
         icon={Image}
         value={pageViews.total_views || 0}
         label="vistas de página"
+        sublabel={`${pageViews.gallery_views || 0} galería`}
         delay={0.2}
       />
       <StatCard

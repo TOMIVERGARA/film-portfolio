@@ -5,9 +5,16 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { useAnalyticsContext } from "@/components/AnalyticsProvider";
+import { useEffect } from "react";
 
 export default function GalleryPage() {
   const { rolls } = useCanvas();
+  const { trackPageView } = useAnalyticsContext();
+
+  useEffect(() => {
+    trackPageView("/gallery", "Gallery View");
+  }, [trackPageView]);
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] text-neutral-200 selection:bg-white/20">
