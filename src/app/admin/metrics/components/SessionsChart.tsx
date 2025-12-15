@@ -42,9 +42,13 @@ export function SessionsChart({ data }: SessionsChartProps) {
   return (
     <ChartContainer
       config={chartConfig}
-      className="h-[300px] w-full aspect-auto"
+      className="h-[300px] w-full aspect-auto overflow-visible"
     >
-      <AreaChart data={formattedData} accessibilityLayer>
+      <AreaChart
+        data={formattedData}
+        accessibilityLayer
+        margin={{ top: 20, right: 20, left: 0, bottom: 0 }}
+      >
         <defs>
           <linearGradient id="fillSessions" x1="0" y1="0" x2="0" y2="1">
             <stop
