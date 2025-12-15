@@ -7,7 +7,8 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "next lint",
-    "init-admin": "tsx --env-file=.env.local scripts/create-admin.ts"
+    "init-admin": "tsx --env-file=.env.local scripts/create-admin.ts",
+    "vercel-install": "npm install --legacy-peer-deps"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
